@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.Authentication.RegisterPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Authentication"
+             Title="Create Account"
+             Shell.NavBarIsVisible="True"
+             x:DataType="vm:RegisterViewModel">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding BackCommand}" />
+    </Shell.BackButtonBehavior>
+
+    <Grid>
+        <ScrollView>
+            <StackLayout Padding="40,40,40,60" Spacing="25">
+                
+                <!-- Header Section -->
+                <StackLayout HorizontalOptions="Center" Spacing="15">
+                    <Image Source="app_logo.png" 
+                           HeightRequest="80" 
+                           WidthRequest="80"
+                           HorizontalOptions="Center" />
+                    
+                    <Label Text="Create Account"
+                           FontSize="28"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    
+                    <Label Text="Join thousands of teams collaborating better"
+                           FontSize="16"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                           HorizontalTextAlignment="Center" />
+                </StackLayout>
+
+                <!-- Registration Form -->
+                <StackLayout Spacing="20" Margin="0,30,0,0">
+                    
+                    <!-- Name Fields -->
+                    <Grid ColumnDefinitions="*,15,*" ColumnSpacing="0">
+                        <!-- First Name -->
+                        <StackLayout Grid.Column="0" Spacing="8">
+                            <Label Text="First Name"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                   BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                   CornerRadius="8"
+                                   Padding="0"
+                                   HasShadow="False">
+                                <Entry x:Name="FirstNameEntry"
+                                       Text="{Binding FirstName}"
+                                       Placeholder="First name"
+                                       ClearButtonVisibility="WhileEditing"
+                                       FontSize="16"
+                                       BackgroundColor="Transparent"
+                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                       Margin="15,8">
+                                    <Entry.Behaviors>
+                                        <toolkit:EventToCommandBehavior EventName="Completed" 
+                                                                      Command="{Binding FocusLastNameCommand}" />
+                                    </Entry.Behaviors>
+                                </Entry>
+                            </Frame>
+                            
+                            <Label Text="{Binding FirstNameError}"
+                                   FontSize="12"
+                                   TextColor="Red"
+                                   IsVisible="{Binding HasFirstNameError}" />
+                        </StackLayout>
+
+                        <!-- Last Name -->
+                        <StackLayout Grid.Column="2" Spacing="8">
+                            <Label Text="Last Name"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                   BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                   CornerRadius="8"
+                                   Padding="0"
+                                   HasShadow="False">
+                                <Entry x:Name="LastNameEntry"
+                                       Text="{Binding LastName}"
+                                       Placeholder="Last name"
+                                       ClearButtonVisibility="WhileEditing"
+                                       FontSize="16"
+                                       BackgroundColor="Transparent"
+                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                       Margin="15,8">
+                                    <Entry.Behaviors>
+                                        <toolkit:EventToCommandBehavior EventName="Completed" 
+                                                                      Command="{Binding FocusEmailCommand}" />
+                                    </Entry.Behaviors>
+                                </Entry>
+                            </Frame>
+                            
+                            <Label Text="{Binding LastNameError}"
+                                   FontSize="12"
+                                   TextColor="Red"
+                                   IsVisible="{Binding HasLastNameError}" />
+                        </StackLayout>
+                    </Grid>
+
+                    <!-- Email Field -->
+                    <StackLayout Spacing="8">
+                        <Label Text="Email Address"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+                        
+                        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <Entry x:Name="EmailEntry"
+                                   Text="{Binding Email}"
+                                   Placeholder="Enter your email"
+                                   Keyboard="Email"
+                                   ClearButtonVisibility="WhileEditing"
+                                   FontSize="16"
+                                   BackgroundColor="Transparent"
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                   PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                   Margin="15,8">
+                                <Entry.Behaviors>
+                                    <toolkit:EventToCommandBehavior EventName="Completed" 
+                                                                  Command="{Binding FocusPasswordCommand}" />
+                                </Entry.Behaviors>
+                            </Entry>
+                        </Frame>
+                        
+                        <Label Text="{Binding EmailError}"
+                               FontSize="12"
+                               TextColor="Red"
+                               IsVisible="{Binding HasEmailError}" />
+                    </StackLayout>
+
+                    <!-- Password Field -->
+                    <StackLayout Spacing="8">
+                        <Label Text="Password"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+                        
+                        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Entry x:Name="PasswordEntry"
+                                       Grid.Column="0"
+                                       Text="{Binding Password}"
+                                       Placeholder="Create a password"
+                                       IsPassword="{Binding IsPasswordHidden}"
+                                       FontSize="16"
+                                       BackgroundColor="Transparent"
+                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                       Margin="15,8,8,8">
+                                    <Entry.Behaviors>
+                                        <toolkit:EventToCommandBehavior EventName="Completed" 
+                                                                      Command="{Binding FocusConfirmPasswordCommand}" />
+                                    </Entry.Behaviors>
+                                </Entry>
+                                
+                                <Button Grid.Column="1"
+                                        Text="{Binding PasswordToggleIcon}"
+                                        FontSize="16"
+                                        BackgroundColor="Transparent"
+                                        TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"
+                                        BorderWidth="0"
+                                        WidthRequest="40"
+                                        HeightRequest="40"
+                                        Command="{Binding TogglePasswordVisibilityCommand}" />
+                            </Grid>
+                        </Frame>
+                        
+                        <Label Text="{Binding PasswordError}"
+                               FontSize="12"
+                               TextColor="Red"
+                               IsVisible="{Binding HasPasswordError}" />
+                    </StackLayout>
+
+                    <!-- Confirm Password Field -->
+                    <StackLayout Spacing="8">
+                        <Label Text="Confirm Password"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+                        
+                        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <Entry x:Name="ConfirmPasswordEntry"
+                                   Text="{Binding ConfirmPassword}"
+                                   Placeholder="Confirm your password"
+                                   IsPassword="True"
+                                   FontSize="16"
+                                   BackgroundColor="Transparent"
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                   PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                   Margin="15,8">
+                                <Entry.Behaviors>
+                                    <toolkit:EventToCommandBehavior EventName="Completed" 
+                                                                  Command="{Binding RegisterCommand}" />
+                                </Entry.Behaviors>
+                            </Entry>
+                        </Frame>
+                        
+                        <Label Text="{Binding ConfirmPasswordError}"
+                               FontSize="12"
+                               TextColor="Red"
+                               IsVisible="{Binding HasConfirmPasswordError}" />
+                    </StackLayout>
+
+                    <!-- Password Requirements -->
+                    <StackLayout Spacing="5" Margin="0,10,0,0">
+                        <Label Text="Password Requirements:"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        
+                        <StackLayout Orientation="Horizontal" Spacing="8">
+                            <Label Text="{Binding MinLengthCheckIcon}"
+                                   FontSize="12"
+                                   TextColor="{Binding MinLengthCheckColor}" />
+                            <Label Text="At least 8 characters"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        </StackLayout>
+                        
+                        <StackLayout Orientation="Horizontal" Spacing="8">
+                            <Label Text="{Binding UpperCaseCheckIcon}"
+                                   FontSize="12"
+                                   TextColor="{Binding UpperCaseCheckColor}" />
+                            <Label Text="One uppercase letter"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        </StackLayout>
+                        
+                        <StackLayout Orientation="Horizontal" Spacing="8">
+                            <Label Text="{Binding NumberCheckIcon}"
+                                   FontSize="12"
+                                   TextColor="{Binding NumberCheckColor}" />
+                            <Label Text="One number"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        </StackLayout>
+                    </StackLayout>
+
+                    <!-- Terms and Conditions -->
+                    <StackLayout Orientation="Horizontal" Spacing="8" Margin="0,20,0,0">
+                        <CheckBox IsChecked="{Binding AcceptTerms}"
+                                  Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                        <StackLayout Spacing="0">
+                            <Label FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="I agree to the " />
+                                        <Span Text="Terms of Service" 
+                                              TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                              TextDecorations="Underline">
+                                            <Span.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding OpenTermsCommand}" />
+                                            </Span.GestureRecognizers>
+                                        </Span>
+                                        <Span Text=" and " />
+                                        <Span Text="Privacy Policy" 
+                                              TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                              TextDecorations="Underline">
+                                            <Span.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding OpenPrivacyCommand}" />
+                                            </Span.GestureRecognizers>
+                                        </Span>
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            
+                            <Label Text="{Binding TermsError}"
+                                   FontSize="12"
+                                   TextColor="Red"
+                                   IsVisible="{Binding HasTermsError}" />
+                        </StackLayout>
+                    </StackLayout>
+                </StackLayout>
+
+                <!-- Create Account Button -->
+                <Button Text="Create Account"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        TextColor="White"
+                        CornerRadius="12"
+                        HeightRequest="50"
+                        Margin="0,20,0,0"
+                        Command="{Binding RegisterCommand}"
+                        IsEnabled="{Binding IsNotBusy}" />
+
+                <!-- Sign In Link -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Spacing="5" Margin="0,40,0,0">
+                    <Label Text="Already have an account?"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                    
+                    <Label Text="Sign In"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                           TextDecorations="Underline">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateToLoginCommand}" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </StackLayout>
+                
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Loading Overlay -->
+        <Grid IsVisible="{Binding IsBusy}"
+              BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#80000000}">
+            <StackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="15">
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                 Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                <Label Text="Creating your account..."
+                       FontSize="16"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+            </StackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

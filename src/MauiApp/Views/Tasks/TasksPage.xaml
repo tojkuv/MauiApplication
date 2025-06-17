@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.Tasks.TasksPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Tasks"
+             Title="Tasks"
+             x:DataType="vm:TasksListViewModel">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" 
+                 Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <StackLayout Padding="20" Spacing="20">
+                
+                <!-- Header with Search and Kanban Toggle -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                    <StackLayout Grid.Column="0" VerticalOptions="Center">
+                        <Label Text="Tasks"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        <Label Text="{Binding TasksSummary}"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                    </StackLayout>
+                    
+                    <!-- Kanban View Button -->
+                    <Button Grid.Column="1"
+                            Text="📋"
+                            FontSize="18"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            Command="{Binding ViewKanbanBoardCommand}"
+                            ToolTipProperties.Text="Kanban Board" />
+                    
+                    <!-- Search Entry -->
+                    <Entry Grid.Column="2"
+                           Placeholder="Search tasks..."
+                           Text="{Binding SearchText}"
+                           WidthRequest="200"
+                           VerticalOptions="Center">
+                        <Entry.Behaviors>
+                            <toolkit:EventToCommandBehavior EventName="TextChanged" Command="{Binding SearchCommand}" />
+                        </Entry.Behaviors>
+                    </Entry>
+                </Grid>
+
+                <!-- Project Filter -->
+                <StackLayout Spacing="8">
+                    <Label Text="Filter by Project"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    <Picker ItemsSource="{Binding ProjectOptions}"
+                            ItemDisplayBinding="{Binding Name}"
+                            SelectedItem="{Binding SelectedProject}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                </StackLayout>
+
+                <!-- Status Filter Chips -->
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="All"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterTasksCommand}" CommandParameter="all" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="Gray"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="To Do"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterTasksCommand}" CommandParameter="todo" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="Gray"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="In Progress"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterTasksCommand}" CommandParameter="inprogress" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="Gray"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Completed"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterTasksCommand}" CommandParameter="completed" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="Gray"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Overdue"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterTasksCommand}" CommandParameter="overdue" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="Gray"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="High Priority"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterTasksCommand}" CommandParameter="high" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+                    </StackLayout>
+                </ScrollView>
+
+                <!-- Loading Indicator -->
+                <ActivityIndicator IsVisible="{Binding IsLoading}" 
+                                   IsRunning="{Binding IsLoading}"
+                                   Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                   VerticalOptions="Center" />
+
+                <!-- Tasks List -->
+                <CollectionView ItemsSource="{Binding FilteredTasks}"
+                                BackgroundColor="Transparent"
+                                IsVisible="{Binding HasTasks}"
+                                EmptyView="No tasks found">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                                   CornerRadius="12"
+                                   Padding="16"
+                                   Margin="0,8"
+                                   HasShadow="True">
+                                <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto" RowSpacing="8" ColumnSpacing="12">
+                                    
+                                    <!-- Priority Indicator -->
+                                    <BoxView Grid.Row="0" Grid.Column="0" Grid.RowSpan="4"
+                                             BackgroundColor="{Binding PriorityColor}"
+                                             WidthRequest="4"
+                                             CornerRadius="2"
+                                             VerticalOptions="Fill" />
+                                    
+                                    <!-- Task Header -->
+                                    <StackLayout Grid.Row="0" Grid.Column="1" Spacing="4">
+                                        <Label Text="{Binding Title}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                               LineBreakMode="TailTruncation" />
+                                        
+                                        <Label Text="{Binding Description}"
+                                               FontSize="13"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="2"
+                                               IsVisible="{Binding Description, Converter={StaticResource IsNotNullConverter}}" />
+                                    </StackLayout>
+                                    
+                                    <!-- Status Badge -->
+                                    <Frame Grid.Row="0" Grid.Column="2"
+                                           BackgroundColor="{Binding StatusColor}"
+                                           CornerRadius="8"
+                                           Padding="8,4"
+                                           HasShadow="False">
+                                        <Label Text="{Binding Status}"
+                                               FontSize="10"
+                                               FontAttributes="Bold"
+                                               TextColor="White" />
+                                    </Frame>
+                                    
+                                    <!-- Project and Time Info -->
+                                    <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                                        <StackLayout Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding ProjectName}"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding ProjectColor}" />
+                                            <Label Text="Project"
+                                                   FontSize="9"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                        </StackLayout>
+                                        
+                                        <StackLayout Grid.Column="1" Spacing="2">
+                                            <Label Text="{Binding EstimatedTimeText}"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                            <Label Text="Estimated"
+                                                   FontSize="9"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                        </StackLayout>
+                                        
+                                        <StackLayout Grid.Column="2" Spacing="2">
+                                            <Label Text="{Binding Priority}"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding PriorityColor}" />
+                                            <Label Text="Priority"
+                                                   FontSize="9"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                        </StackLayout>
+                                    </Grid>
+                                    
+                                    <!-- Progress Bar -->
+                                    <StackLayout Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Spacing="4">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <Label Grid.Column="0"
+                                                   Text="Progress"
+                                                   FontSize="11"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding ProgressText}"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding StatusColor}" />
+                                        </Grid>
+                                        
+                                        <ProgressBar Progress="{Binding ProgressPercentage}"
+                                                     ProgressColor="{Binding StatusColor}"
+                                                     BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                                     HeightRequest="4" />
+                                    </StackLayout>
+                                    
+                                    <!-- Due Date and Actions -->
+                                    <Grid Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <StackLayout Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                                            <Label Text="📅"
+                                                   FontSize="11"
+                                                   VerticalOptions="Center" />
+                                            <Label Text="{Binding DueDateText}"
+                                                   FontSize="11"
+                                                   TextColor="{Binding DueDateColor}"
+                                                   VerticalOptions="Center" />
+                                            
+                                            <!-- Tags -->
+                                            <Label Text="{Binding TagsText}"
+                                                   FontSize="10"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                                   VerticalOptions="Center"
+                                                   IsVisible="{Binding Tags.Count, Converter={StaticResource IsNotNullConverter}}"
+                                                   LineBreakMode="TailTruncation" />
+                                            
+                                            <!-- Sync Status -->
+                                            <Label Text="🔄"
+                                                   FontSize="10"
+                                                   TextColor="Orange"
+                                                   IsVisible="{Binding HasLocalChanges}"
+                                                   VerticalOptions="Center" />
+                                            <Label Text="✓"
+                                                   FontSize="10"
+                                                   TextColor="Green"
+                                                   IsVisible="{Binding IsSynced}"
+                                                   VerticalOptions="Center" />
+                                        </StackLayout>
+                                        
+                                        <!-- Action Buttons -->
+                                        <StackLayout Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                            <Button Text="▶️"
+                                                    FontSize="12"
+                                                    BackgroundColor="Transparent"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TasksListViewModel}}, Path=StartTaskCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    IsVisible="{Binding CanStart}"
+                                                    ToolTipProperties.Text="Start Task" />
+                                            
+                                            <Button Text="✅"
+                                                    FontSize="12"
+                                                    BackgroundColor="Transparent"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TasksListViewModel}}, Path=CompleteTaskCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    IsVisible="{Binding CanComplete}"
+                                                    ToolTipProperties.Text="Complete Task" />
+                                            
+                                            <Button Text="✏️"
+                                                    FontSize="12"
+                                                    BackgroundColor="Transparent"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TasksListViewModel}}, Path=EditTaskCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    ToolTipProperties.Text="Edit Task" />
+                                        </StackLayout>
+                                    </Grid>
+                                </Grid>
+                                
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TasksListViewModel}}, Path=ViewTaskCommand}"
+                                                          CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Empty State -->
+                <StackLayout IsVisible="{Binding HasTasks, Converter={StaticResource InvertedBoolConverter}}"
+                             Spacing="20"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center">
+                    <Label Text="📝"
+                           FontSize="48"
+                           HorizontalOptions="Center" />
+                    <Label Text="No Tasks Yet"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+                    <Label Text="Create your first task to get started"
+                           FontSize="14"
+                           TextColor="Gray"
+                           HorizontalOptions="Center" />
+                </StackLayout>
+
+                <!-- Create Task Button -->
+                <Button Text="+ Create Task"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        TextColor="White"
+                        CornerRadius="25"
+                        HeightRequest="50"
+                        HorizontalOptions="FillAndExpand"
+                        Command="{Binding CreateTaskCommand}" />
+                
+            </StackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

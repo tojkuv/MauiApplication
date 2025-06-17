@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.Dashboard.ActivityPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Dashboard"
+             Title="Activity Feed"
+             x:DataType="vm:ActivityViewModel">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" 
+                 Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <StackLayout Padding="20" Spacing="20">
+                
+                <!-- Header Section -->
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="15">
+                    <StackLayout Grid.Column="0" VerticalOptions="Center">
+                        <Label Text="Activity Feed"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        <Label Text="{Binding ActivitySummary}"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                    </StackLayout>
+                    
+                    <!-- Filter/Settings Button -->
+                    <Button Grid.Column="1"
+                            Text="⚙️"
+                            FontSize="16"
+                            BackgroundColor="Transparent"
+                            BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                            BorderWidth="1"
+                            CornerRadius="20"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            Command="{Binding ShowFilterOptionsCommand}" />
+                </Grid>
+
+                <!-- Activity Type Filter -->
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Frame BackgroundColor="{Binding AllActivitiesChipColor}"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="All"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterAllActivitiesCommand}" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="{Binding TasksChipColor}"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Tasks"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterTaskActivitiesCommand}" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="{Binding ProjectsChipColor}"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Projects"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterProjectActivitiesCommand}" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="{Binding FilesChipColor}"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Files"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterFileActivitiesCommand}" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="{Binding CollaborationChipColor}"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Chat"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterChatActivitiesCommand}" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+                    </StackLayout>
+                </ScrollView>
+
+                <!-- Activity Timeline -->
+                <CollectionView ItemsSource="{Binding FilteredActivities}"
+                                BackgroundColor="Transparent"
+                                EmptyView="No activities found">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="0,10" ColumnDefinitions="50,*" ColumnSpacing="15">
+                                
+                                <!-- Timeline Indicator -->
+                                <StackLayout Grid.Column="0" HorizontalOptions="Center">
+                                    <!-- User Avatar -->
+                                    <Frame BackgroundColor="{Binding UserAvatarBackgroundColor}"
+                                           CornerRadius="20"
+                                           WidthRequest="35"
+                                           HeightRequest="35"
+                                           Padding="0"
+                                           HasShadow="True">
+                                        <Label Text="{Binding UserInitials}"
+                                               FontSize="12"
+                                               FontAttributes="Bold"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"
+                                               TextColor="White" />
+                                    </Frame>
+                                    
+                                    <!-- Timeline Line -->
+                                    <BoxView BackgroundColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                             WidthRequest="2"
+                                             HeightRequest="30"
+                                             VerticalOptions="Fill" />
+                                </StackLayout>
+                                
+                                <!-- Activity Content -->
+                                <Frame Grid.Column="1"
+                                       BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                                       CornerRadius="12"
+                                       Padding="15"
+                                       HasShadow="True">
+                                    <StackLayout Spacing="8">
+                                        
+                                        <!-- Activity Header -->
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding ActivityIcon}"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center" />
+                                            
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding UserName}"
+                                                   FontSize="14"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                                   VerticalOptions="Center" />
+                                            
+                                            <Label Grid.Column="2"
+                                                   Text="{Binding TimeAgo}"
+                                                   FontSize="10"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                   VerticalOptions="Center" />
+                                        </Grid>
+                                        
+                                        <!-- Activity Description -->
+                                        <Label Text="{Binding Description}"
+                                               FontSize="13"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray800}, Dark={StaticResource Gray200}}"
+                                               LineBreakMode="WordWrap" />
+                                        
+                                        <!-- Project/Context Info -->
+                                        <StackLayout Orientation="Horizontal" Spacing="15" IsVisible="{Binding HasContextInfo}">
+                                            <Frame BackgroundColor="{Binding ProjectColor}"
+                                                   CornerRadius="8"
+                                                   Padding="8,4"
+                                                   HasShadow="False"
+                                                   IsVisible="{Binding HasProject}">
+                                                <Label Text="{Binding ProjectName}"
+                                                       FontSize="10"
+                                                       FontAttributes="Bold"
+                                                       TextColor="White" />
+                                            </Frame>
+                                            
+                                            <Label Text="{Binding ContextInfo}"
+                                                   FontSize="11"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                   VerticalOptions="Center"
+                                                   IsVisible="{Binding HasContextInfo}" />
+                                        </StackLayout>
+                                        
+                                        <!-- Action Buttons -->
+                                        <StackLayout Orientation="Horizontal" Spacing="10" IsVisible="{Binding HasActions}">
+                                            <Button Text="View"
+                                                    FontSize="12"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                                    BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                                    BorderWidth="1"
+                                                    CornerRadius="15"
+                                                    Padding="15,5"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ActivityViewModel}}, Path=ViewActivityDetailsCommand}"
+                                                    CommandParameter="{Binding .}" />
+                                        </StackLayout>
+                                    </StackLayout>
+                                    
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ActivityViewModel}}, Path=ViewActivityDetailsCommand}"
+                                                              CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
+                                </Frame>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Load More Button -->
+                <Button Text="Load More Activities"
+                        FontSize="14"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        BorderWidth="1"
+                        CornerRadius="20"
+                        HeightRequest="40"
+                        Command="{Binding LoadMoreCommand}"
+                        IsVisible="{Binding HasMoreActivities}" />
+                
+            </StackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

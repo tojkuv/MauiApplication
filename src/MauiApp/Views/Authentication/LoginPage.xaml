@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.Authentication.LoginPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Authentication"
+             Title="Sign In"
+             Shell.NavBarIsVisible="True"
+             x:DataType="vm:LoginViewModel">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding BackCommand}" />
+    </Shell.BackButtonBehavior>
+
+    <Grid>
+        <ScrollView>
+            <StackLayout Padding="40,40,40,60" Spacing="25">
+                
+                <!-- Header Section -->
+                <StackLayout HorizontalOptions="Center" Spacing="15">
+                    <Image Source="app_logo.png" 
+                           HeightRequest="80" 
+                           WidthRequest="80"
+                           HorizontalOptions="Center" />
+                    
+                    <Label Text="Welcome Back"
+                           FontSize="28"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    
+                    <Label Text="Sign in to your account to continue"
+                           FontSize="16"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                           HorizontalTextAlignment="Center" />
+                </StackLayout>
+
+                <!-- Login Form -->
+                <StackLayout Spacing="20" Margin="0,30,0,0">
+                    
+                    <!-- Email Field -->
+                    <StackLayout Spacing="8">
+                        <Label Text="Email Address"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+                        
+                        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <Entry x:Name="EmailEntry"
+                                   Text="{Binding Email}"
+                                   Placeholder="Enter your email"
+                                   Keyboard="Email"
+                                   ClearButtonVisibility="WhileEditing"
+                                   FontSize="16"
+                                   BackgroundColor="Transparent"
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                   PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                   Margin="15,8">
+                                <Entry.Behaviors>
+                                    <toolkit:EventToCommandBehavior EventName="Completed" 
+                                                                  Command="{Binding FocusPasswordCommand}" />
+                                </Entry.Behaviors>
+                            </Entry>
+                        </Frame>
+                        
+                        <Label Text="{Binding EmailError}"
+                               FontSize="12"
+                               TextColor="Red"
+                               IsVisible="{Binding HasEmailError}" />
+                    </StackLayout>
+
+                    <!-- Password Field -->
+                    <StackLayout Spacing="8">
+                        <Label Text="Password"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+                        
+                        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Entry x:Name="PasswordEntry"
+                                       Grid.Column="0"
+                                       Text="{Binding Password}"
+                                       Placeholder="Enter your password"
+                                       IsPassword="{Binding IsPasswordHidden}"
+                                       FontSize="16"
+                                       BackgroundColor="Transparent"
+                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                       Margin="15,8,8,8">
+                                    <Entry.Behaviors>
+                                        <toolkit:EventToCommandBehavior EventName="Completed" 
+                                                                      Command="{Binding LoginCommand}" />
+                                    </Entry.Behaviors>
+                                </Entry>
+                                
+                                <Button Grid.Column="1"
+                                        Text="{Binding PasswordToggleIcon}"
+                                        FontSize="16"
+                                        BackgroundColor="Transparent"
+                                        TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"
+                                        BorderWidth="0"
+                                        WidthRequest="40"
+                                        HeightRequest="40"
+                                        Command="{Binding TogglePasswordVisibilityCommand}" />
+                            </Grid>
+                        </Frame>
+                        
+                        <Label Text="{Binding PasswordError}"
+                               FontSize="12"
+                               TextColor="Red"
+                               IsVisible="{Binding HasPasswordError}" />
+                    </StackLayout>
+
+                    <!-- Remember Me and Forgot Password -->
+                    <Grid ColumnDefinitions="*,*">
+                        <StackLayout Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                            <CheckBox IsChecked="{Binding RememberMe}"
+                                      Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                            <Label Text="Remember me"
+                                   FontSize="14"
+                                   VerticalOptions="Center"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        </StackLayout>
+                        
+                        <Label Grid.Column="1"
+                               Text="Forgot Password?"
+                               FontSize="14"
+                               HorizontalOptions="End"
+                               VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               TextDecorations="Underline">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ForgotPasswordCommand}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+                </StackLayout>
+
+                <!-- Sign In Button -->
+                <Button Text="Sign In"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        TextColor="White"
+                        CornerRadius="12"
+                        HeightRequest="50"
+                        Margin="0,20,0,0"
+                        Command="{Binding LoginCommand}"
+                        IsEnabled="{Binding IsNotBusy}" />
+
+                <!-- Biometric Login (if available) -->
+                <Button Text="Sign in with Biometrics"
+                        FontSize="16"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        BorderWidth="2"
+                        CornerRadius="12"
+                        HeightRequest="50"
+                        Command="{Binding BiometricLoginCommand}"
+                        IsVisible="{Binding IsBiometricAvailable}"
+                        IsEnabled="{Binding IsNotBusy}" />
+
+                <!-- OR Divider -->
+                <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="15" Margin="0,30,0,0">
+                    <BoxView Grid.Column="0"
+                             Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                             HeightRequest="1"
+                             VerticalOptions="Center" />
+                    <Label Grid.Column="1"
+                           Text="OR"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                           VerticalOptions="Center" />
+                    <BoxView Grid.Column="2"
+                             Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                             HeightRequest="1"
+                             VerticalOptions="Center" />
+                </Grid>
+
+                <!-- Social Login Buttons -->
+                <StackLayout Spacing="15">
+                    <Button Text="Continue with Google"
+                            FontSize="16"
+                            BackgroundColor="Transparent"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}"
+                            BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                            BorderWidth="1"
+                            CornerRadius="12"
+                            HeightRequest="50"
+                            Command="{Binding SocialLoginCommand}"
+                            CommandParameter="google"
+                            IsEnabled="{Binding IsNotBusy}" />
+                    
+                    <Button Text="Continue with Microsoft"
+                            FontSize="16"
+                            BackgroundColor="Transparent"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}"
+                            BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                            BorderWidth="1"
+                            CornerRadius="12"
+                            HeightRequest="50"
+                            Command="{Binding SocialLoginCommand}"
+                            CommandParameter="microsoft"
+                            IsEnabled="{Binding IsNotBusy}" />
+                </StackLayout>
+
+                <!-- Sign Up Link -->
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Spacing="5" Margin="0,40,0,0">
+                    <Label Text="Don't have an account?"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                    
+                    <Label Text="Sign Up"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                           TextDecorations="Underline">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateToRegisterCommand}" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </StackLayout>
+                
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Loading Overlay -->
+        <Grid IsVisible="{Binding IsBusy}"
+              BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#80000000}">
+            <StackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="15">
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                 Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                <Label Text="Signing you in..."
+                       FontSize="16"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray200}}" />
+            </StackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

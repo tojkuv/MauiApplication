@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.Dashboard.DashboardPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Dashboard"
+             Title="Dashboard"
+             x:DataType="vm:DashboardViewModel">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" 
+                 Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <StackLayout Padding="20" Spacing="20">
+                
+                <!-- Header Section -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="15">
+                    <!-- Welcome Message -->
+                    <StackLayout Grid.Column="0" VerticalOptions="Center" Spacing="5">
+                        <Label Text="{Binding WelcomeMessage}"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        
+                        <Label Text="{Binding CurrentDateTime}"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                    </StackLayout>
+                    
+                    <!-- Search Button -->
+                    <Button Grid.Column="1"
+                            Text="🔍"
+                            FontSize="18"
+                            BackgroundColor="Transparent"
+                            BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                            BorderWidth="1"
+                            CornerRadius="20"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            Command="{Binding SearchCommand}" />
+                    
+                    <!-- Notification Bell -->
+                    <Grid Grid.Column="2">
+                        <Button Text="🔔"
+                                FontSize="18"
+                                BackgroundColor="Transparent"
+                                BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                BorderWidth="1"
+                                CornerRadius="20"
+                                WidthRequest="40"
+                                HeightRequest="40"
+                                Command="{Binding NotificationsCommand}" />
+                        
+                        <!-- Notification Badge -->
+                        <Frame BackgroundColor="Red"
+                               CornerRadius="10"
+                               WidthRequest="20"
+                               HeightRequest="20"
+                               Padding="0"
+                               HorizontalOptions="End"
+                               VerticalOptions="Start"
+                               Margin="0,-5,-5,0"
+                               IsVisible="{Binding HasNotifications}"
+                               HasShadow="False">
+                            <Label Text="{Binding NotificationCount}"
+                                   FontSize="10"
+                                   FontAttributes="Bold"
+                                   TextColor="White"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Frame>
+                    </Grid>
+                </Grid>
+
+                <!-- Quick Stats Cards -->
+                <Label Text="Quick Overview"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                       Margin="0,10,0,0" />
+                
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="15" RowSpacing="15">
+                    
+                    <!-- Active Projects Card -->
+                    <Frame Grid.Row="0" Grid.Column="0"
+                           BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                           CornerRadius="12"
+                           Padding="20"
+                           HasShadow="True">
+                        <StackLayout Spacing="8">
+                            <Label Text="📊"
+                                   FontSize="24"
+                                   HorizontalOptions="Start" />
+                            
+                            <Label Text="{Binding ActiveProjectsCount}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="White" />
+                            
+                            <Label Text="Active Projects"
+                                   FontSize="12"
+                                   TextColor="White"
+                                   Opacity="0.9" />
+                            
+                            <StackLayout Orientation="Horizontal" Spacing="5">
+                                <Label Text="{Binding ProjectsTrendIcon}"
+                                       FontSize="12"
+                                       VerticalOptions="Center" />
+                                
+                                <Label Text="{Binding ProjectsTrendText}"
+                                       FontSize="10"
+                                       TextColor="White"
+                                       Opacity="0.8"
+                                       VerticalOptions="Center" />
+                            </StackLayout>
+                        </StackLayout>
+                        
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateToProjectsCommand}" />
+                        </Frame.GestureRecognizers>
+                    </Frame>
+
+                    <!-- Overdue Tasks Card -->
+                    <Frame Grid.Row="0" Grid.Column="1"
+                           BackgroundColor="{Binding OverdueTasksCardColor}"
+                           CornerRadius="12"
+                           Padding="20"
+                           HasShadow="True">
+                        <StackLayout Spacing="8">
+                            <Label Text="⚠️"
+                                   FontSize="24"
+                                   HorizontalOptions="Start" />
+                            
+                            <Label Text="{Binding OverdueTasksCount}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="White" />
+                            
+                            <Label Text="Overdue Tasks"
+                                   FontSize="12"
+                                   TextColor="White"
+                                   Opacity="0.9" />
+                            
+                            <Label Text="Needs attention"
+                                   FontSize="10"
+                                   TextColor="White"
+                                   Opacity="0.8" />
+                        </StackLayout>
+                        
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateToOverdueTasksCommand}" />
+                        </Frame.GestureRecognizers>
+                    </Frame>
+
+                    <!-- Completed Tasks Card -->
+                    <Frame Grid.Row="1" Grid.Column="0"
+                           BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDark}}"
+                           CornerRadius="12"
+                           Padding="20"
+                           HasShadow="True">
+                        <StackLayout Spacing="8">
+                            <Label Text="✅"
+                                   FontSize="24"
+                                   HorizontalOptions="Start" />
+                            
+                            <Label Text="{Binding CompletedTasksThisWeek}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="White" />
+                            
+                            <Label Text="This Week"
+                                   FontSize="12"
+                                   TextColor="White"
+                                   Opacity="0.9" />
+                            
+                            <Label Text="Tasks completed"
+                                   FontSize="10"
+                                   TextColor="White"
+                                   Opacity="0.8" />
+                        </StackLayout>
+                        
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateToMyTasksCommand}" />
+                        </Frame.GestureRecognizers>
+                    </Frame>
+
+                    <!-- Upcoming Deadlines Card -->
+                    <Frame Grid.Row="1" Grid.Column="1"
+                           BackgroundColor="{AppThemeBinding Light={StaticResource Tertiary}, Dark={StaticResource TertiaryDark}}"
+                           CornerRadius="12"
+                           Padding="20"
+                           HasShadow="True">
+                        <StackLayout Spacing="8">
+                            <Label Text="📅"
+                                   FontSize="24"
+                                   HorizontalOptions="Start" />
+                            
+                            <Label Text="{Binding UpcomingDeadlinesCount}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="White" />
+                            
+                            <Label Text="Next 7 Days"
+                                   FontSize="12"
+                                   TextColor="White"
+                                   Opacity="0.9" />
+                            
+                            <Label Text="Upcoming deadlines"
+                                   FontSize="10"
+                                   TextColor="White"
+                                   Opacity="0.8" />
+                        </StackLayout>
+                        
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavigateToCalendarCommand}" />
+                        </Frame.GestureRecognizers>
+                    </Frame>
+                </Grid>
+
+                <!-- Recent Activity Timeline -->
+                <StackLayout Spacing="15" Margin="0,20,0,0">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="Recent Activity"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        
+                        <Label Grid.Column="1"
+                               Text="View All"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               TextDecorations="Underline"
+                               VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ViewAllActivitiesCommand}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+
+                    <!-- Activity List -->
+                    <CollectionView ItemsSource="{Binding RecentActivities}"
+                                    BackgroundColor="Transparent">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="0,8" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
+                                    
+                                    <!-- User Avatar -->
+                                    <Frame Grid.Column="0"
+                                           BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}"
+                                           CornerRadius="20"
+                                           WidthRequest="40"
+                                           HeightRequest="40"
+                                           Padding="0"
+                                           HasShadow="False">
+                                        <Label Text="{Binding UserInitials}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"
+                                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                    </Frame>
+                                    
+                                    <!-- Activity Details -->
+                                    <StackLayout Grid.Column="1" VerticalOptions="Center" Spacing="3">
+                                        <Label Text="{Binding Description}"
+                                               FontSize="14"
+                                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                        
+                                        <StackLayout Orientation="Horizontal" Spacing="10">
+                                            <Label Text="{Binding ProjectName}"
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                                   FontAttributes="Bold" />
+                                            
+                                            <Label Text="{Binding TimeAgo}"
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                        </StackLayout>
+                                    </StackLayout>
+                                    
+                                    <!-- Activity Type Icon -->
+                                    <Label Grid.Column="2"
+                                           Text="{Binding ActivityIcon}"
+                                           FontSize="16"
+                                           VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+
+                <!-- Quick Actions Floating Button -->
+                <Grid Margin="0,40,0,20">
+                    <Button Text="+ Quick Actions"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                            TextColor="White"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            HorizontalOptions="Center"
+                            WidthRequest="200"
+                            Command="{Binding ShowQuickActionsCommand}" />
+                </Grid>
+                
+            </StackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

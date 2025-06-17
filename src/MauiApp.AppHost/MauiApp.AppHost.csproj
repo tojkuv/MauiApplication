@@ -14,7 +14,15 @@
     <PackageReference Include="Aspire.Hosting.Azure.ApplicationInsights" Version="8.2.2" />
     <PackageReference Include="Aspire.Hosting.Azure.KeyVault" Version="8.2.2" />
     <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="8.2.2" />
+    <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" Version="8.2.2" />
+    <PackageReference Include="Aspire.Hosting.Redis" Version="8.2.2" />
     <PackageReference Include="Aspire.Hosting.SqlServer" Version="8.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MauiApp.ApiService\MauiApp.ApiService.csproj" />
+    <ProjectReference Include="..\MauiApp.IdentityService\MauiApp.IdentityService.csproj" />
+    <ProjectReference Include="..\MauiApp.ProjectsService\MauiApp.ProjectsService.csproj" />
   </ItemGroup>
 
 </Project>

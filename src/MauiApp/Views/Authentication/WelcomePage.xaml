@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.Authentication.WelcomePage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Authentication"
+             Title="Welcome"
+             Shell.NavBarIsVisible="False"
+             x:DataType="vm:WelcomeViewModel">
+
+    <Grid>
+        <ScrollView>
+            <StackLayout Padding="40,80,40,40" Spacing="30">
+                
+                <!-- Logo Section -->
+                <StackLayout HorizontalOptions="Center" Spacing="20">
+                    <Image Source="app_logo.png" 
+                           HeightRequest="120" 
+                           WidthRequest="120"
+                           HorizontalOptions="Center" />
+                    
+                    <Label Text="Project Hub"
+                           FontSize="32"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                    
+                    <Label Text="Collaborate • Organize • Achieve"
+                           FontSize="16"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                           HorizontalTextAlignment="Center" />
+                </StackLayout>
+
+                <!-- Feature Highlights -->
+                <StackLayout Spacing="25" Margin="0,40,0,0">
+                    
+                    <!-- Team Collaboration -->
+                    <Grid ColumnDefinitions="60,*" ColumnSpacing="15">
+                        <Frame Grid.Column="0" 
+                               BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               CornerRadius="30"
+                               Padding="0"
+                               HeightRequest="60"
+                               WidthRequest="60"
+                               HasShadow="False">
+                            <Label Text="👥"
+                                   FontSize="24"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Frame>
+                        
+                        <StackLayout Grid.Column="1" VerticalOptions="Center" Spacing="5">
+                            <Label Text="Team Collaboration"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                            <Label Text="Real-time chat, file sharing, and seamless teamwork"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        </StackLayout>
+                    </Grid>
+
+                    <!-- Project Management -->
+                    <Grid ColumnDefinitions="60,*" ColumnSpacing="15">
+                        <Frame Grid.Column="0" 
+                               BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDark}}"
+                               CornerRadius="30"
+                               Padding="0"
+                               HeightRequest="60"
+                               WidthRequest="60"
+                               HasShadow="False">
+                            <Label Text="📊"
+                                   FontSize="24"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Frame>
+                        
+                        <StackLayout Grid.Column="1" VerticalOptions="Center" Spacing="5">
+                            <Label Text="Smart Project Management"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                            <Label Text="Kanban boards, time tracking, and progress analytics"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        </StackLayout>
+                    </Grid>
+
+                    <!-- Cross-Platform -->
+                    <Grid ColumnDefinitions="60,*" ColumnSpacing="15">
+                        <Frame Grid.Column="0" 
+                               BackgroundColor="{AppThemeBinding Light={StaticResource Tertiary}, Dark={StaticResource TertiaryDark}}"
+                               CornerRadius="30"
+                               Padding="0"
+                               HeightRequest="60"
+                               WidthRequest="60"
+                               HasShadow="False">
+                            <Label Text="📱"
+                                   FontSize="24"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Frame>
+                        
+                        <StackLayout Grid.Column="1" VerticalOptions="Center" Spacing="5">
+                            <Label Text="Work Anywhere"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                            <Label Text="Native apps for iOS, Android, Windows, and macOS"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        </StackLayout>
+                    </Grid>
+                </StackLayout>
+
+                <!-- Action Buttons -->
+                <StackLayout Spacing="15" Margin="0,60,0,0">
+                    
+                    <!-- OAuth2 Providers -->
+                    <Label Text="Continue with"
+                           FontSize="16"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                    
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="🍎"
+                                FontSize="20"
+                                BackgroundColor="Transparent"
+                                BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                BorderWidth="1"
+                                CornerRadius="8"
+                                HeightRequest="50"
+                                Command="{Binding LoginWithProviderCommand}"
+                                CommandParameter="apple" />
+                        
+                        <Button Grid.Column="1"
+                                Text="Google"
+                                FontSize="16"
+                                BackgroundColor="Transparent"
+                                BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                BorderWidth="1"
+                                CornerRadius="8"
+                                HeightRequest="50"
+                                Command="{Binding LoginWithProviderCommand}"
+                                CommandParameter="google" />
+                        
+                        <Button Grid.Column="2"
+                                Text="Microsoft"
+                                FontSize="14"
+                                BackgroundColor="Transparent"
+                                BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                BorderWidth="1"
+                                CornerRadius="8"
+                                HeightRequest="50"
+                                Command="{Binding LoginWithProviderCommand}"
+                                CommandParameter="microsoft" />
+                    </Grid>
+                    
+                    <!-- OR Divider -->
+                    <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="15" Margin="0,20,0,0">
+                        <BoxView Grid.Column="0"
+                                 Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                 HeightRequest="1"
+                                 VerticalOptions="Center" />
+                        <Label Grid.Column="1"
+                               Text="OR"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                               VerticalOptions="Center" />
+                        <BoxView Grid.Column="2"
+                                 Color="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                 HeightRequest="1"
+                                 VerticalOptions="Center" />
+                    </Grid>
+
+                    <!-- Email Options -->
+                    <Button Text="Sign in with Email"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                            TextColor="White"
+                            CornerRadius="12"
+                            HeightRequest="50"
+                            Command="{Binding NavigateToLoginCommand}" />
+                    
+                    <Button Text="Create Account"
+                            FontSize="16"
+                            BackgroundColor="Transparent"
+                            TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                            BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                            BorderWidth="2"
+                            CornerRadius="12"
+                            HeightRequest="50"
+                            Command="{Binding NavigateToRegisterCommand}" />
+                </StackLayout>
+
+                <!-- Terms and Privacy -->
+                <StackLayout Spacing="10" Margin="0,40,0,20">
+                    <Label Text="By continuing, you agree to our Terms of Service and Privacy Policy"
+                           FontSize="12"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                    
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Spacing="20">
+                        <Label Text="Terms of Service"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               TextDecorations="Underline">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenTermsCommand}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                        
+                        <Label Text="Privacy Policy"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               TextDecorations="Underline">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenPrivacyCommand}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </StackLayout>
+                </StackLayout>
+                
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Loading Overlay -->
+        <Grid IsVisible="{Binding IsBusy}"
+              BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#80000000}">
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                             Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center" />
+        </Grid>
+    </Grid>
+</ContentPage>

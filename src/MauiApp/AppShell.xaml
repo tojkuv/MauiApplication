@@ -3,17 +3,224 @@
     x:Class="MauiApp.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:MauiApp"
-    Title="MauiApp">
+    xmlns:views="clr-namespace:MauiApp.Views"
+    xmlns:dashboard="clr-namespace:MauiApp.Views.Dashboard"
+    xmlns:projects="clr-namespace:MauiApp.Views.Projects"
+    xmlns:tasks="clr-namespace:MauiApp.Views.Tasks"
+    xmlns:collaboration="clr-namespace:MauiApp.Views.Collaboration"
+    xmlns:files="clr-namespace:MauiApp.Views.Files"
+    xmlns:reports="clr-namespace:MauiApp.Views.Reports"
+    xmlns:timetracking="clr-namespace:MauiApp.Views.TimeTracking"
+    Title="Project Hub"
+    FlyoutBehavior="Flyout">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
-        
-    <ShellContent
-        Title="Settings"
-        ContentTemplate="{DataTemplate local:SettingsPage}"
-        Route="SettingsPage" />
+    <Shell.Resources>
+        <ResourceDictionary>
+            <Style x:Key="BaseStyle" TargetType="Element">
+                <Setter Property="Shell.BackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}" />
+                <Setter Property="Shell.ForegroundColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                <Setter Property="Shell.TitleColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                <Setter Property="Shell.DisabledColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" />
+                <Setter Property="Shell.UnselectedColor" Value="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                <Setter Property="Shell.TabBarBackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}" />
+                <Setter Property="Shell.TabBarForegroundColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}" />
+                <Setter Property="Shell.TabBarUnselectedColor" Value="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}" />
+                <Setter Property="Shell.TabBarTitleColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}" />
+            </Style>
+        </ResourceDictionary>
+    </Shell.Resources>
+
+    <!-- Flyout Header -->
+    <Shell.FlyoutHeaderTemplate>
+        <DataTemplate>
+            <Grid BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" 
+                  HeightRequest="180" 
+                  Padding="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- User Avatar -->
+                <Frame Grid.Row="0" 
+                       BackgroundColor="White"
+                       CornerRadius="40"
+                       HeightRequest="80"
+                       WidthRequest="80"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       Padding="0"
+                       HasShadow="True">
+                    <Image Source="user_avatar.png" 
+                           Aspect="AspectFill"
+                           HeightRequest="80"
+                           WidthRequest="80" />
+                </Frame>
+
+                <!-- User Name -->
+                <Label Grid.Row="1" 
+                       Text="John Doe"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       Margin="0,10,0,0" />
+
+                <!-- User Role -->
+                <Label Grid.Row="2" 
+                       Text="Project Manager"
+                       FontSize="14"
+                       TextColor="White"
+                       Opacity="0.8"
+                       HorizontalOptions="Center" />
+
+                <!-- Current Project -->
+                <Label Grid.Row="3" 
+                       Text="📊 Mobile App Project"
+                       FontSize="12"
+                       TextColor="White"
+                       Opacity="0.7"
+                       HorizontalOptions="Center"
+                       Margin="0,5,0,0" />
+            </Grid>
+        </DataTemplate>
+    </Shell.FlyoutHeaderTemplate>
+
+    <!-- Dashboard Section -->
+    <FlyoutItem Title="Dashboard" Icon="dashboard.png" Route="dashboard">
+        <Tab Title="Overview" Icon="home.png">
+            <ShellContent ContentTemplate="{DataTemplate dashboard:DashboardPage}" Route="overview" />
+        </Tab>
+        <Tab Title="My Tasks" Icon="tasks.png">
+            <ShellContent ContentTemplate="{DataTemplate dashboard:MyTasksPage}" Route="mytasks" />
+        </Tab>
+        <Tab Title="Activity" Icon="activity.png">
+            <ShellContent ContentTemplate="{DataTemplate dashboard:ActivityPage}" Route="activity" />
+        </Tab>
+    </FlyoutItem>
+
+    <!-- Projects Section -->
+    <FlyoutItem Title="Projects" Icon="projects.png" Route="projects">
+        <ShellContent ContentTemplate="{DataTemplate projects:ProjectsListPage}" />
+    </FlyoutItem>
+
+    <!-- Tasks Section -->
+    <FlyoutItem Title="Tasks" Icon="tasks.png" Route="tasks">
+        <ShellContent ContentTemplate="{DataTemplate tasks:TasksPage}" />
+    </FlyoutItem>
+
+    <!-- Collaboration Section -->
+    <FlyoutItem Title="Team Chat" Icon="chat.png" Route="collaboration">
+        <ShellContent ContentTemplate="{DataTemplate collaboration:ChatPage}" />
+    </FlyoutItem>
+
+    <!-- Files Section -->
+    <FlyoutItem Title="Files" Icon="files.png" Route="files">
+        <ShellContent ContentTemplate="{DataTemplate files:FilesPage}" />
+    </FlyoutItem>
+
+    <!-- Reports Section -->
+    <FlyoutItem Title="Reports" Icon="analytics.png" Route="reports">
+        <ShellContent ContentTemplate="{DataTemplate reports:ReportsPage}" />
+    </FlyoutItem>
+
+    <!-- Time Tracking Section -->
+    <FlyoutItem Title="Time Tracking" Icon="timer.png" Route="timetracking">
+        <ShellContent ContentTemplate="{DataTemplate timetracking:TimeTrackingPage}" />
+    </FlyoutItem>
+
+    <!-- Flyout Footer -->
+    <Shell.FlyoutFooterTemplate>
+        <DataTemplate>
+            <StackLayout BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}" 
+                         Padding="20" 
+                         Spacing="15">
+                
+                <!-- Settings -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <Label Grid.Column="0" 
+                           Text="⚙️" 
+                           FontSize="20" 
+                           VerticalOptions="Center" />
+                    
+                    <Label Grid.Column="1" 
+                           Text="Settings" 
+                           FontSize="16" 
+                           VerticalOptions="Center" 
+                           Margin="15,0,0,0"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding NavigateToSettingsCommand}" />
+                    </Grid.GestureRecognizers>
+                </Grid>
+
+                <!-- Help & Support -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <Label Grid.Column="0" 
+                           Text="❓" 
+                           FontSize="20" 
+                           VerticalOptions="Center" />
+                    
+                    <Label Grid.Column="1" 
+                           Text="Help & Support" 
+                           FontSize="16" 
+                           VerticalOptions="Center" 
+                           Margin="15,0,0,0"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding NavigateToHelpCommand}" />
+                    </Grid.GestureRecognizers>
+                </Grid>
+
+                <!-- Logout -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <Label Grid.Column="0" 
+                           Text="🚪" 
+                           FontSize="20" 
+                           VerticalOptions="Center" />
+                    
+                    <Label Grid.Column="1" 
+                           Text="Sign Out" 
+                           FontSize="16" 
+                           VerticalOptions="Center" 
+                           Margin="15,0,0,0"
+                           TextColor="Red" />
+                    
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding LogoutCommand}" />
+                    </Grid.GestureRecognizers>
+                </Grid>
+
+                <!-- App Version -->
+                <Label Text="Version 1.0.0" 
+                       FontSize="12" 
+                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                       HorizontalOptions="Center" 
+                       Margin="0,20,0,0" />
+            </StackLayout>
+        </DataTemplate>
+    </Shell.FlyoutFooterTemplate>
 
 </Shell>

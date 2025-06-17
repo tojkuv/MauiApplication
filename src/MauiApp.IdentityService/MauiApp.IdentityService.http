@@ -1,0 +1,6 @@
+@MauiApp.IdentityService_HostAddress = http://localhost:5100
+
+GET {{MauiApp.IdentityService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

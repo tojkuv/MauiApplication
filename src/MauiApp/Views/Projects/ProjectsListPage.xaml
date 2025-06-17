@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.Projects.ProjectsListPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Projects"
+             Title="Projects"
+             x:DataType="vm:ProjectsListViewModel">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" 
+                 Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <StackLayout Padding="20" Spacing="20">
+                
+                <!-- Header with Search -->
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="15">
+                    <StackLayout Grid.Column="0" VerticalOptions="Center">
+                        <Label Text="Projects"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        <Label Text="{Binding ProjectsSummary}"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                    </StackLayout>
+                    
+                    <!-- Search Entry -->
+                    <Entry Grid.Column="1"
+                           Placeholder="Search projects..."
+                           Text="{Binding SearchText}"
+                           WidthRequest="200"
+                           VerticalOptions="Center">
+                        <Entry.Behaviors>
+                            <toolkit:EventToCommandBehavior EventName="TextChanged" Command="{Binding SearchCommand}" />
+                        </Entry.Behaviors>
+                    </Entry>
+                </Grid>
+
+                <!-- Filter Chips -->
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="All Projects"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterProjectsCommand}" CommandParameter="all" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="Gray"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Active"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterProjectsCommand}" CommandParameter="active" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="Gray"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Completed"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterProjectsCommand}" CommandParameter="completed" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+
+                        <Frame BackgroundColor="Gray"
+                               CornerRadius="15"
+                               Padding="15,8"
+                               HasShadow="False">
+                            <Label Text="Overdue"
+                                   FontSize="12"
+                                   TextColor="White">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FilterProjectsCommand}" CommandParameter="overdue" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Frame>
+                    </StackLayout>
+                </ScrollView>
+
+                <!-- Loading Indicator -->
+                <ActivityIndicator IsVisible="{Binding IsLoading}" 
+                                   IsRunning="{Binding IsLoading}"
+                                   Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                   VerticalOptions="Center" />
+
+                <!-- Projects List -->
+                <CollectionView ItemsSource="{Binding FilteredProjects}"
+                                BackgroundColor="Transparent"
+                                IsVisible="{Binding HasProjects}"
+                                EmptyView="No projects found">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                                   CornerRadius="12"
+                                   Padding="20"
+                                   Margin="0,5"
+                                   HasShadow="True">
+                                <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto" RowSpacing="10" ColumnSpacing="15">
+                                    
+                                    <!-- Project Color Indicator -->
+                                    <BoxView Grid.Row="0" Grid.Column="0" Grid.RowSpan="4"
+                                             BackgroundColor="{Binding Color}"
+                                             WidthRequest="4"
+                                             CornerRadius="2"
+                                             VerticalOptions="Fill" />
+                                    
+                                    <!-- Project Header -->
+                                    <StackLayout Grid.Row="0" Grid.Column="1" Spacing="5">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                        
+                                        <Label Text="{Binding Description}"
+                                               FontSize="14"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="2" />
+                                    </StackLayout>
+                                    
+                                    <!-- Status Badge -->
+                                    <Frame Grid.Row="0" Grid.Column="2"
+                                           BackgroundColor="{Binding StatusColor}"
+                                           CornerRadius="10"
+                                           Padding="10,5"
+                                           HasShadow="False">
+                                        <Label Text="{Binding Status}"
+                                               FontSize="11"
+                                               FontAttributes="Bold"
+                                               TextColor="White" />
+                                    </Frame>
+                                    
+                                    <!-- Project Stats -->
+                                    <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                                        <StackLayout Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding TaskCount}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                            <Label Text="Tasks"
+                                                   FontSize="10"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                        </StackLayout>
+                                        
+                                        <StackLayout Grid.Column="1" Spacing="2">
+                                            <Label Text="{Binding TeamSize}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                            <Label Text="Team"
+                                                   FontSize="10"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                        </StackLayout>
+                                        
+                                        <StackLayout Grid.Column="2" Spacing="2">
+                                            <Label Text="{Binding BudgetText}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                            <Label Text="Budget"
+                                                   FontSize="10"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                        </StackLayout>
+                                    </Grid>
+                                    
+                                    <!-- Progress Bar -->
+                                    <StackLayout Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Spacing="5">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                            <Label Grid.Column="0"
+                                                   Text="Progress"
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding ProgressText}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding ProgressColor}" />
+                                        </Grid>
+                                        
+                                        <ProgressBar Progress="{Binding Progress}"
+                                                     ProgressColor="{Binding ProgressColor}"
+                                                     BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                                     HeightRequest="6" />
+                                    </StackLayout>
+                                    
+                                    <!-- Due Date and Actions -->
+                                    <Grid Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                        <StackLayout Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                                            <Label Text="📅"
+                                                   FontSize="12"
+                                                   VerticalOptions="Center" />
+                                            <Label Text="{Binding DueDateText}"
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                   VerticalOptions="Center" />
+                                            
+                                            <!-- Sync Status Indicator -->
+                                            <Label Text="🔄"
+                                                   FontSize="10"
+                                                   TextColor="Orange"
+                                                   IsVisible="{Binding HasLocalChanges}"
+                                                   VerticalOptions="Center" />
+                                            <Label Text="✓"
+                                                   FontSize="10"
+                                                   TextColor="Green"
+                                                   IsVisible="{Binding IsSynced}"
+                                                   VerticalOptions="Center" />
+                                        </StackLayout>
+                                        
+                                        <!-- Action Buttons -->
+                                        <StackLayout Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                            <Button Text="📋"
+                                                    FontSize="14"
+                                                    BackgroundColor="Transparent"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectsListViewModel}}, Path=ViewTasksCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    ToolTipProperties.Text="View Tasks" />
+                                            
+                                            <Button Text="✏️"
+                                                    FontSize="14"
+                                                    BackgroundColor="Transparent"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectsListViewModel}}, Path=EditProjectCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    ToolTipProperties.Text="Edit Project" />
+                                        </StackLayout>
+                                    </Grid>
+                                </Grid>
+                                
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectsListViewModel}}, Path=ViewProjectCommand}"
+                                                          CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Empty State -->
+                <StackLayout IsVisible="{Binding HasProjects, Converter={StaticResource InvertedBoolConverter}}"
+                             Spacing="20"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center">
+                    <Label Text="📁"
+                           FontSize="48"
+                           HorizontalOptions="Center" />
+                    <Label Text="No Projects Yet"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+                    <Label Text="Create your first project to get started"
+                           FontSize="14"
+                           TextColor="Gray"
+                           HorizontalOptions="Center" />
+                </StackLayout>
+
+                <!-- Create Project Button -->
+                <Button Text="+ Create Project"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        TextColor="White"
+                        CornerRadius="25"
+                        HeightRequest="50"
+                        HorizontalOptions="FillAndExpand"
+                        Command="{Binding CreateProjectCommand}" />
+                
+            </StackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

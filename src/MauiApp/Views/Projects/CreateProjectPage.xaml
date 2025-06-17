@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.Projects.CreateProjectPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Projects"
+             Title="{Binding PageTitle}"
+             x:DataType="vm:CreateProjectViewModel">
+
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="25">
+            
+            <!-- Header -->
+            <Label Text="{Binding PageTitle}"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                   HorizontalOptions="Center" />
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsVisible="{Binding IsLoading}" 
+                               IsRunning="{Binding IsLoading}"
+                               Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               VerticalOptions="Center" />
+
+            <!-- Form Fields -->
+            <StackLayout Spacing="20" IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+                
+                <!-- Project Name -->
+                <StackLayout Spacing="8">
+                    <Label Text="Project Name *"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    <Entry Text="{Binding Name}"
+                           Placeholder="Enter project name"
+                           MaxLength="200"
+                           BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                </StackLayout>
+
+                <!-- Description -->
+                <StackLayout Spacing="8">
+                    <Label Text="Description"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    <Editor Text="{Binding Description}"
+                            Placeholder="Enter project description (optional)"
+                            MaxLength="1000"
+                            HeightRequest="100"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                </StackLayout>
+
+                <!-- Dates Section -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                    <!-- Start Date -->
+                    <StackLayout Grid.Column="0" Spacing="8">
+                        <Label Text="Start Date"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        <DatePicker Date="{Binding StartDate}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                                    TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    </StackLayout>
+
+                    <!-- Due Date -->
+                    <StackLayout Grid.Column="1" Spacing="8">
+                        <Label Text="Due Date"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        <DatePicker Date="{Binding DueDate}"
+                                    IsVisible="{Binding DueDate, Converter={StaticResource IsNotNullConverter}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                                    TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        <Button Text="Set Due Date"
+                                IsVisible="{Binding DueDate, Converter={StaticResource IsNullConverter}}"
+                                BackgroundColor="Transparent"
+                                TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderWidth="1"
+                                Command="{Binding SetDueDateThreeMonthsCommand}" />
+                    </StackLayout>
+                </Grid>
+
+                <!-- Due Date Quick Actions -->
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" IsVisible="{Binding DueDate, Converter={StaticResource IsNotNullConverter}}">
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Button Text="Today"
+                                FontSize="12"
+                                BackgroundColor="Transparent"
+                                TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderWidth="1"
+                                CornerRadius="15"
+                                Padding="15,5"
+                                Command="{Binding SetDueDateTodayCommand}" />
+                        
+                        <Button Text="Next Week"
+                                FontSize="12"
+                                BackgroundColor="Transparent"
+                                TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderWidth="1"
+                                CornerRadius="15"
+                                Padding="15,5"
+                                Command="{Binding SetDueDateNextWeekCommand}" />
+                        
+                        <Button Text="Next Month"
+                                FontSize="12"
+                                BackgroundColor="Transparent"
+                                TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderWidth="1"
+                                CornerRadius="15"
+                                Padding="15,5"
+                                Command="{Binding SetDueDateNextMonthCommand}" />
+                        
+                        <Button Text="3 Months"
+                                FontSize="12"
+                                BackgroundColor="Transparent"
+                                TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                BorderWidth="1"
+                                CornerRadius="15"
+                                Padding="15,5"
+                                Command="{Binding SetDueDateThreeMonthsCommand}" />
+                        
+                        <Button Text="Clear"
+                                FontSize="12"
+                                BackgroundColor="Transparent"
+                                TextColor="Red"
+                                BorderColor="Red"
+                                BorderWidth="1"
+                                CornerRadius="15"
+                                Padding="15,5"
+                                Command="{Binding ClearDueDateCommand}" />
+                    </StackLayout>
+                </ScrollView>
+
+                <!-- Budget and Status -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                    <!-- Budget -->
+                    <StackLayout Grid.Column="0" Spacing="8">
+                        <Label Text="Budget"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        <Entry Text="{Binding Budget}"
+                               Placeholder="0.00"
+                               Keyboard="Numeric"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    </StackLayout>
+
+                    <!-- Status -->
+                    <StackLayout Grid.Column="1" Spacing="8">
+                        <Label Text="Status"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        <Picker ItemsSource="{Binding StatusOptions}"
+                                SelectedItem="{Binding SelectedStatus}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                                TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    </StackLayout>
+                </Grid>
+
+                <!-- Project Color -->
+                <StackLayout Spacing="12">
+                    <Label Text="Project Color"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    
+                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                        <StackLayout Orientation="Horizontal" Spacing="10">
+                            <CollectionView ItemsSource="{Binding ColorOptions}"
+                                            BackgroundColor="Transparent"
+                                            SelectionMode="Single"
+                                            SelectedItem="{Binding SelectedColor}">
+                                <CollectionView.ItemsLayout>
+                                    <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10" />
+                                </CollectionView.ItemsLayout>
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Frame BackgroundColor="{Binding Color}"
+                                               CornerRadius="20"
+                                               WidthRequest="40"
+                                               HeightRequest="40"
+                                               Padding="0"
+                                               HasShadow="True">
+                                            <Frame.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CreateProjectViewModel}}, Path=SelectColorCommand}"
+                                                                      CommandParameter="{Binding Hex}" />
+                                            </Frame.GestureRecognizers>
+                                        </Frame>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </StackLayout>
+                    </ScrollView>
+                </StackLayout>
+
+                <!-- Validation Errors -->
+                <Frame IsVisible="{Binding HasValidationErrors}"
+                       BackgroundColor="Red"
+                       CornerRadius="8"
+                       Padding="15"
+                       HasShadow="False">
+                    <Label Text="{Binding ValidationMessage}"
+                           FontSize="14"
+                           TextColor="White" />
+                </Frame>
+
+                <!-- Action Buttons -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="15" Margin="0,20,0,0">
+                    <Button Grid.Column="0"
+                            Text="Cancel"
+                            FontSize="16"
+                            BackgroundColor="Transparent"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                            BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                            BorderWidth="1"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            Command="{Binding CancelCommand}" />
+                    
+                    <Button Grid.Column="1"
+                            Text="{Binding SaveButtonText}"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                            TextColor="White"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            Command="{Binding SaveProjectCommand}"
+                            IsEnabled="{Binding HasValidationErrors, Converter={StaticResource InvertedBoolConverter}}" />
+                </Grid>
+            </StackLayout>
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
