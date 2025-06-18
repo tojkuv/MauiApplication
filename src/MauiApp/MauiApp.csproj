@@ -52,6 +52,9 @@
 		<!-- UI and Validation packages -->
 		<PackageReference Include="CommunityToolkit.Maui" Version="9.1.0" />
 		<PackageReference Include="InputKit.Maui" Version="4.4.4" />
+		
+		<!-- SignalR for real-time collaboration -->
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

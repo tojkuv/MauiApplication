@@ -18,6 +18,12 @@ public class NotificationDto
     public string? ActionUrl { get; set; }
     public string? ImageUrl { get; set; }
     public DateTime? ExpiresAt { get; set; }
+    public bool IsRead => ReadAt.HasValue;
+    
+    // Related entity IDs for navigation
+    public Guid? ProjectId { get; set; }
+    public Guid? TaskId { get; set; }
+    public Guid? FileId { get; set; }
 }
 
 public class SendNotificationRequestDto
@@ -77,12 +83,16 @@ public class BulkNotificationRequestDto
 public class NotificationPreferencesDto
 {
     public Guid UserId { get; set; }
-    public bool PushNotificationsEnabled { get; set; } = true;
-    public bool EmailNotificationsEnabled { get; set; } = true;
-    public bool InAppNotificationsEnabled { get; set; } = true;
+    public bool EmailEnabled { get; set; } = true;
+    public bool PushEnabled { get; set; } = true;
+    public bool InAppEnabled { get; set; } = true;
+    public bool SmsEnabled { get; set; } = false;
     
-    // Type-specific preferences
-    public Dictionary<NotificationType, NotificationChannelPreferences> TypePreferences { get; set; } = new();
+    // Channel preferences by notification type
+    public Dictionary<NotificationType, Dictionary<NotificationChannel, bool>> ChannelPreferences { get; set; } = new();
+    
+    // Opted-out channels
+    public List<NotificationChannel> OptedOutChannels { get; set; } = new();
     
     // Quiet hours
     public TimeSpan? QuietHoursStart { get; set; }
@@ -92,6 +102,9 @@ public class NotificationPreferencesDto
     // Frequency limits
     public int MaxNotificationsPerHour { get; set; } = 10;
     public int MaxNotificationsPerDay { get; set; } = 50;
+    
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
 
 public class NotificationChannelPreferences
@@ -133,10 +146,16 @@ public class NotificationTemplateDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
     public NotificationType Type { get; set; }
     public string TitleTemplate { get; set; } = string.Empty;
-    public string MessageTemplate { get; set; } = string.Empty;
+    public string BodyTemplate { get; set; } = string.Empty;
+    public string? HtmlTemplate { get; set; }
+    public string? SubjectTemplate { get; set; }
     public string? ActionUrlTemplate { get; set; }
+    public Dictionary<string, object> ChannelSettings { get; set; } = new();
+    public List<TemplateVariableDto> Variables { get; set; } = new();
     public Dictionary<string, string> DefaultData { get; set; } = new();
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
@@ -149,6 +168,9 @@ public class CreateNotificationTemplateRequestDto
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
     
+    public string Description { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    
     [Required]
     public NotificationType Type { get; set; }
     
@@ -158,10 +180,24 @@ public class CreateNotificationTemplateRequestDto
     
     [Required]
     [StringLength(1000)]
-    public string MessageTemplate { get; set; } = string.Empty;
+    public string BodyTemplate { get; set; } = string.Empty;
     
+    public string? HtmlTemplate { get; set; }
+    public string? SubjectTemplate { get; set; }
     public string? ActionUrlTemplate { get; set; }
+    public Dictionary<string, object> ChannelSettings { get; set; } = new();
+    public List<TemplateVariableDto> Variables { get; set; } = new();
     public Dictionary<string, string> DefaultData { get; set; } = new();
+    public bool IsActive { get; set; } = true;
+}
+
+public class TemplateVariableDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsRequired { get; set; }
+    public object? DefaultValue { get; set; }
 }
 
 public class NotificationStatsDto
@@ -233,6 +269,39 @@ public class PushNotificationDto
     public TimeSpan? TimeToLive { get; set; }
 }
 
+// Scheduling DTOs
+public class ScheduledNotificationDto
+{
+    public Guid Id { get; set; }
+    public Guid? TemplateId { get; set; }
+    public string TemplateName { get; set; } = string.Empty;
+    public NotificationDto? Notification { get; set; }
+    public List<string> Recipients { get; set; } = new();
+    public List<string> EmailRecipients { get; set; } = new();
+    public NotificationChannel Channel { get; set; }
+    public DateTime ScheduledAt { get; set; }
+    public NotificationScheduleStatus Status { get; set; }
+    public Dictionary<string, object> TemplateData { get; set; } = new();
+    public string? TimeZone { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
+    public ReportConfigDto ReportConfig { get; set; } = new();
+}
+
+public class ReportConfigDto
+{
+    public Guid? TemplateId { get; set; }
+    public Dictionary<string, object> Parameters { get; set; } = new();
+}
+
+public class CreateNotificationSubscriptionDto
+{
+    public Guid UserId { get; set; }
+    public NotificationType Type { get; set; }
+    public NotificationChannel Channel { get; set; }
+    public Dictionary<string, object> Criteria { get; set; } = new();
+}
+
 // Enums
 public enum NotificationType
 {
@@ -246,7 +315,9 @@ public enum NotificationType
     FileShared = 8,
     Reminder = 9,
     System = 10,
-    Marketing = 11
+    Marketing = 11,
+    Alert = 12,
+    Critical = 13
 }
 
 public enum NotificationPriority
@@ -294,4 +365,12 @@ public enum NotificationDeliveryStatus
     Read = 4,
     Failed = 5,
     Expired = 6
+}
+
+public enum NotificationScheduleStatus
+{
+    Pending = 1,
+    Executed = 2,
+    Failed = 3,
+    Cancelled = 4
 }

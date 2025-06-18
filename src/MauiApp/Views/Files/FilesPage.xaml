@@ -2,24 +2,310 @@
 <ContentPage x:Class="MauiApp.Views.Files.FilesPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             Title="Files">
+             xmlns:converters="clr-namespace:MauiApp.Converters"
+             Title="{Binding ProjectName, StringFormat='Files - {0}'}">
 
-    <ScrollView>
-        <StackLayout Padding="20" Spacing="20">
-            <Label Text="File Browser"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center" />
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Upload" 
+                     Command="{Binding UploadFilesCommand}"
+                     IconImageSource="upload_icon.png" />
+        <ToolbarItem Text="New Folder" 
+                     Command="{Binding CreateFolderCommand}"
+                     IconImageSource="folder_add_icon.png" />
+        <ToolbarItem Text="View" 
+                     Command="{Binding ToggleViewModeCommand}"
+                     IconImageSource="view_mode_icon.png" />
+        <ToolbarItem Text="Sort" 
+                     Command="{Binding ChangeSortCommand}"
+                     IconImageSource="sort_icon.png" />
+    </ContentPage.ToolbarItems>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Search Bar -->
+        <SearchBar Grid.Row="0"
+                   Text="{Binding SearchText}"
+                   Placeholder="Search files..."
+                   SearchCommand="{Binding SearchFilesCommand}"
+                   Margin="10,5" />
+
+        <!-- Breadcrumb Navigation -->
+        <Frame Grid.Row="1" 
+               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+               Padding="10,5"
+               Margin="10,0"
+               CornerRadius="5"
+               HasShadow="False"
+               IsVisible="{Binding CurrentFolderPath, Converter={StaticResource IsNotNullConverter}}">
+            <StackLayout Orientation="Horizontal">
+                <Button Text="⬆" 
+                        Command="{Binding GoUpFolderCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                <Label Text="{Binding CurrentFolderPath, StringFormat='📁 {0}'}"
+                       VerticalOptions="Center"
+                       FontSize="14" />
+            </StackLayout>
+        </Frame>
+
+        <!-- Storage Stats -->
+        <Frame Grid.Row="2"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDark}}"
+               Padding="10"
+               Margin="10,5"
+               CornerRadius="8"
+               HasShadow="False"
+               IsVisible="{Binding StorageStats, Converter={StaticResource IsNotNullConverter}}">
+            <StackLayout Orientation="Horizontal" Spacing="15">
+                <Label Text="📊" FontSize="16" VerticalOptions="Center" />
+                <StackLayout Spacing="2">
+                    <Label Text="{Binding StorageStats.TotalFiles, StringFormat='{0} files'}"
+                           FontSize="12"
+                           TextColor="White" />
+                    <Label Text="{Binding StorageStats.UsedStorage, Converter={StaticResource BytesToSizeConverter}, StringFormat='Used: {0}'}"
+                           FontSize="12"
+                           TextColor="White" />
+                </StackLayout>
+                <ProgressBar Progress="{Binding StorageStats.StorageUsagePercentage}"
+                             ProgressColor="White"
+                             VerticalOptions="Center"
+                             HorizontalOptions="FillAndExpand" />
+            </StackLayout>
+        </Frame>
+
+        <!-- Upload Progress -->
+        <Frame Grid.Row="2"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+               Padding="10"
+               Margin="10,5"
+               CornerRadius="8"
+               HasShadow="False"
+               IsVisible="{Binding IsUploading}">
+            <StackLayout Spacing="5">
+                <Label Text="{Binding UploadStatus}"
+                       FontSize="14"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                <ProgressBar Progress="{Binding UploadProgress}"
+                             ProgressColor="White" />
+            </StackLayout>
+        </Frame>
+
+        <!-- Files Content -->
+        <RefreshView Grid.Row="3"
+                     Command="{Binding RefreshCommand}"
+                     IsRefreshing="{Binding IsLoading}">
             
-            <Label Text="File management coming soon!"
-                   FontSize="16"
+            <!-- Grid View -->
+            <CollectionView ItemsSource="{Binding Files}"
+                            IsVisible="{Binding ViewMode, Converter={StaticResource StringEqualsConverter}, ConverterParameter='grid'}">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical"
+                                     Span="2"
+                                     HorizontalItemSpacing="10"
+                                     VerticalItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray800}}"
+                               CornerRadius="12"
+                               Padding="15"
+                               HasShadow="True"
+                               Margin="5">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShowFileDetailsCommand}"
+                                                      CommandParameter="{Binding .}" />
+                            </Frame.GestureRecognizers>
+                            
+                            <StackLayout Spacing="8">
+                                <!-- File Icon -->
+                                <Label Text="📄"
+                                       FontSize="32"
+                                       HorizontalOptions="Center" />
+                                
+                                <!-- File Name -->
+                                <Label Text="{Binding FileName}"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="2"
+                                       HorizontalOptions="Center"
+                                       HorizontalTextAlignment="Center" />
+                                
+                                <!-- File Size -->
+                                <Label Text="{Binding FileSizeFormatted}"
+                                       FontSize="12"
+                                       TextColor="Gray"
+                                       HorizontalOptions="Center" />
+                                
+                                <!-- File Actions -->
+                                <StackLayout Orientation="Horizontal"
+                                             HorizontalOptions="Center"
+                                             Spacing="10">
+                                    <Button Text="⬇"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DownloadFileCommand}"
+                                            CommandParameter="{Binding .}"
+                                            FontSize="12"
+                                            BackgroundColor="Transparent"
+                                            TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                    <Button Text="🖊"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RenameFileCommand}"
+                                            CommandParameter="{Binding .}"
+                                            FontSize="12"
+                                            BackgroundColor="Transparent"
+                                            TextColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDark}}" />
+                                    <Button Text="🗑"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteFileCommand}"
+                                            CommandParameter="{Binding .}"
+                                            FontSize="12"
+                                            BackgroundColor="Transparent"
+                                            TextColor="Red" />
+                                </StackLayout>
+                            </StackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            
+            <!-- List View -->
+            <CollectionView ItemsSource="{Binding Files}"
+                            IsVisible="{Binding ViewMode, Converter={StaticResource StringEqualsConverter}, ConverterParameter='list'}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <!-- Swipe Actions -->
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Download"
+                                               BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DownloadFileCommand}"
+                                               CommandParameter="{Binding .}" />
+                                    <SwipeItem Text="Rename"
+                                               BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDark}}"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RenameFileCommand}"
+                                               CommandParameter="{Binding .}" />
+                                    <SwipeItem Text="Delete"
+                                               BackgroundColor="Red"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteFileCommand}"
+                                               CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray800}}"
+                                   CornerRadius="8"
+                                   Padding="15"
+                                   Margin="10,5"
+                                   HasShadow="False">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShowFileDetailsCommand}"
+                                                          CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+                                
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <!-- File Icon -->
+                                    <Label Grid.Column="0"
+                                           Text="📄"
+                                           FontSize="24"
+                                           VerticalOptions="Center"
+                                           Margin="0,0,15,0" />
+                                    
+                                    <!-- File Info -->
+                                    <StackLayout Grid.Column="1" Spacing="4">
+                                        <Label Text="{Binding FileName}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding FileSizeFormatted}"
+                                               FontSize="12"
+                                               TextColor="Gray" />
+                                        <Label Text="{Binding CreatedAt, StringFormat='Uploaded: {0:yyyy-MM-dd HH:mm}'}"
+                                               FontSize="12"
+                                               TextColor="Gray" />
+                                        <Label Text="{Binding UploadedByName, StringFormat='By: {0}'}"
+                                               FontSize="12"
+                                               TextColor="Gray" />
+                                    </StackLayout>
+                                    
+                                    <!-- More Options -->
+                                    <Button Grid.Column="2"
+                                            Text="⋮"
+                                            FontSize="18"
+                                            BackgroundColor="Transparent"
+                                            TextColor="Gray"
+                                            VerticalOptions="Center"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShowFileOptionsCommand}"
+                                            CommandParameter="{Binding .}" />
+                                </Grid>
+                            </Frame>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Empty State -->
+        <StackLayout Grid.Row="3"
+                     HorizontalOptions="Center"
+                     VerticalOptions="Center"
+                     Spacing="20"
+                     IsVisible="{Binding Files.Count, Converter={StaticResource IsZeroConverter}}">
+            <Label Text="📁"
+                   FontSize="64"
                    HorizontalOptions="Center"
                    TextColor="Gray" />
-            
-            <Button Text="Go Back"
-                    Command="{Binding BackCommand}"
-                    HorizontalOptions="Center" />
+            <Label Text="No files found"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   TextColor="Gray" />
+            <Label Text="Upload files to get started"
+                   FontSize="14"
+                   HorizontalOptions="Center"
+                   TextColor="Gray" />
+            <Button Text="Upload Files"
+                    Command="{Binding UploadFilesCommand}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    Padding="20,10" />
         </StackLayout>
-    </ScrollView>
-    
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="3"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+        <!-- Error Message -->
+        <Frame Grid.Row="4"
+               BackgroundColor="Red"
+               Padding="15"
+               Margin="10"
+               CornerRadius="8"
+               HasShadow="False"
+               IsVisible="{Binding HasError}">
+            <StackLayout Orientation="Horizontal" Spacing="10">
+                <Label Text="⚠️" FontSize="16" TextColor="White" VerticalOptions="Center" />
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="White"
+                       VerticalOptions="Center"
+                       HorizontalOptions="FillAndExpand" />
+                <Button Text="✕"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="16"
+                        Command="{Binding ClearErrorCommand}" />
+            </StackLayout>
+        </Frame>
+    </Grid>
 </ContentPage>

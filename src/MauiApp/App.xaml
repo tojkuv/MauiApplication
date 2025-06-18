@@ -19,6 +19,27 @@
             <converters:BoolToStatusConverter x:Key="BoolToStatusConverter" />
             <converters:BytesToSizeConverter x:Key="BytesToSizeConverter" />
             <converters:LogLevelToColorConverter x:Key="LogLevelToColorConverter" />
+            <converters:BoolToSyncIconConverter x:Key="BoolToSyncIconConverter" />
+            <converters:BoolToSyncStatusConverter x:Key="BoolToSyncStatusConverter" />
+            <converters:PriorityToColorConverter x:Key="PriorityToColorConverter" />
+            <converters:NameToInitialsConverter x:Key="NameToInitialsConverter" />
+            <converters:IsNotZeroConverter x:Key="IsNotZeroConverter" />
+            <converters:StatusToColorConverter x:Key="StatusToColorConverter" />
+            <converters:BoolToConnectionColorConverter x:Key="BoolToConnectionColorConverter" />
+            <converters:IsCurrentUserConverter x:Key="IsCurrentUserConverter" />
+            <converters:IsNotCurrentUserConverter x:Key="IsNotCurrentUserConverter" />
+            <converters:BoolToSendIconConverter x:Key="BoolToSendIconConverter" />
+            <converters:TypingUsersToStringConverter x:Key="TypingUsersToStringConverter" />
+            <converters:CountToIsAreConverter x:Key="CountToIsAreConverter" />
+            <converters:StringEqualsConverter x:Key="StringEqualsConverter" />
+            <converters:IsZeroConverter x:Key="IsZeroConverter" />
+            <converters:NotificationTypeToIconConverter x:Key="NotificationTypeToIconConverter" />
+            <converters:NotificationTypeToStringConverter x:Key="NotificationTypeToStringConverter" />
+            <converters:BoolToFontAttributesConverter x:Key="BoolToFontAttributesConverter" />
+            <converters:BoolToThicknessConverter x:Key="BoolToThicknessConverter" />
+            <converters:InsightTypeToIconConverter x:Key="InsightTypeToIconConverter" />
+            <converters:ConfidenceToColorConverter x:Key="ConfidenceToColorConverter" />
+            <converters:ProductivityToColorConverter x:Key="ProductivityToColorConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

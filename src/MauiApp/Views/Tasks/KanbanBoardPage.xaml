@@ -2,24 +2,474 @@
 <ContentPage x:Class="MauiApp.Views.Tasks.KanbanBoardPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             Title="Kanban Board">
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Tasks"
+             xmlns:core="clr-namespace:MauiApp.Core.DTOs;assembly=MauiApp.Core"
+             Title="{Binding ProjectName, StringFormat='{0} - Kanban Board'}"
+             x:DataType="vm:KanbanBoardViewModel">
 
-    <ScrollView>
-        <StackLayout Padding="20" Spacing="20">
-            <Label Text="Kanban Board"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center" />
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        
+        <!-- Header with Search and Filters -->
+        <Grid Grid.Row="0" Padding="15" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10"
+              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
             
-            <Label Text="Kanban board view coming soon!"
-                   FontSize="16"
-                   HorizontalOptions="Center"
-                   TextColor="Gray" />
+            <!-- Search Bar -->
+            <SearchBar Grid.Column="0"
+                       Placeholder="Search tasks..."
+                       Text="{Binding SearchQuery}"
+                       SearchCommand="{Binding SearchTasksCommand}"
+                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray800}}"
+                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
             
-            <Button Text="Go Back"
-                    Command="{Binding BackCommand}"
-                    HorizontalOptions="Center" />
+            <!-- Filter Buttons -->
+            <Button Grid.Column="1"
+                    Text="Priority"
+                    FontSize="12"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                    TextColor="White"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Command="{Binding ShowPriorityFilterCommand}" />
+            
+            <Button Grid.Column="2"
+                    Text="Assignee"
+                    FontSize="12"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDark}}"
+                    TextColor="White"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Command="{Binding ShowAssigneeFilterCommand}" />
+            
+            <Button Grid.Column="3"
+                    Text="+ Task"
+                    FontSize="12"
+                    FontAttributes="Bold"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Tertiary}, Dark={StaticResource TertiaryDark}}"
+                    TextColor="White"
+                    CornerRadius="15"
+                    Padding="15,8"
+                    Command="{Binding CreateTaskCommand}" />
+        </Grid>
+
+        <!-- Active Filters Display -->
+        <StackLayout Grid.Row="1" Orientation="Horizontal" Padding="15,5" Spacing="10"
+                     IsVisible="False">
+            <Label Text="Filters will be shown here"
+                   FontSize="12"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
         </StackLayout>
-    </ScrollView>
+
+        <!-- Kanban Board Content -->
+        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshBoardCommand}">
+            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Always">
+                <StackLayout Orientation="Horizontal" Spacing="15" Padding="15" MinimumWidthRequest="1200">
+                    
+                    <!-- Kanban Columns -->
+                    <CollectionView ItemsSource="{Binding Columns}"
+                                    BackgroundColor="Transparent">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="15" />
+                        </CollectionView.ItemsLayout>
+                        
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:KanbanColumnViewModel">
+                                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray800}}"
+                                       CornerRadius="12"
+                                       Padding="0"
+                                       HasShadow="True"
+                                       WidthRequest="280"
+                                       HeightRequest="600">
+                                    
+                                    <Grid RowDefinitions="Auto,*">
+                                        
+                                        <!-- Column Header -->
+                                        <Frame Grid.Row="0"
+                                               BackgroundColor="{Binding StatusColor}"
+                                               CornerRadius="12,12,0,0"
+                                               Padding="15,12"
+                                               HasShadow="False">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                                <Label Grid.Column="0"
+                                                       Text="{Binding StatusIcon}"
+                                                       FontSize="16"
+                                                       VerticalOptions="Center" />
+                                                
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding Title}"
+                                                       FontSize="14"
+                                                       FontAttributes="Bold"
+                                                       TextColor="White"
+                                                       VerticalOptions="Center" />
+                                                
+                                                <Frame Grid.Column="2"
+                                                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray700}}"
+                                                       CornerRadius="10"
+                                                       Padding="8,4"
+                                                       HasShadow="False"
+                                                       VerticalOptions="Center">
+                                                    <Label Text="{Binding TaskCount}"
+                                                           FontSize="12"
+                                                           FontAttributes="Bold"
+                                                           TextColor="{Binding StatusColor}"
+                                                           HorizontalOptions="Center" />
+                                                </Frame>
+                                            </Grid>
+                                        </Frame>
+                                        
+                                        <!-- Tasks List -->
+                                        <ScrollView Grid.Row="1" Padding="8">
+                                            <CollectionView ItemsSource="{Binding Tasks}"
+                                                            BackgroundColor="Transparent"
+                                                            VerticalScrollBarVisibility="Never">
+                                                <CollectionView.ItemTemplate>
+                                                    <DataTemplate x:DataType="core:TaskDto">
+                                                        <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray700}}"
+                                                               CornerRadius="8"
+                                                               Padding="12"
+                                                               Margin="0,4"
+                                                               HasShadow="True">
+                                                            
+                                                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+                                                                
+                                                                <!-- Task Title -->
+                                                                <Label Grid.Row="0"
+                                                                       Text="{Binding Title}"
+                                                                       FontSize="14"
+                                                                       FontAttributes="Bold"
+                                                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                                                       LineBreakMode="TailTruncation"
+                                                                       MaxLines="2" />
+                                                                
+                                                                <!-- Task Description -->
+                                                                <Label Grid.Row="1"
+                                                                       Text="{Binding Description}"
+                                                                       FontSize="12"
+                                                                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                                       LineBreakMode="TailTruncation"
+                                                                       MaxLines="2"
+                                                                       IsVisible="{Binding Description, Converter={StaticResource IsNotNullConverter}}" />
+                                                                
+                                                                <!-- Task Meta Info -->
+                                                                <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                                                    
+                                                                    <!-- Priority Badge -->
+                                                                    <Frame Grid.Column="0"
+                                                                           BackgroundColor="{Binding Priority, Converter={StaticResource PriorityToColorConverter}}"
+                                                                           CornerRadius="6"
+                                                                           Padding="6,2"
+                                                                           HasShadow="False">
+                                                                        <Label Text="{Binding Priority}"
+                                                                               FontSize="9"
+                                                                               FontAttributes="Bold"
+                                                                               TextColor="White" />
+                                                                    </Frame>
+                                                                    
+                                                                    <!-- Due Date -->
+                                                                    <Label Grid.Column="1"
+                                                                           Text="{Binding DueDate, StringFormat='{0:MMM dd}'}"
+                                                                           FontSize="10"
+                                                                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                                           VerticalOptions="Center"
+                                                                           IsVisible="{Binding DueDate, Converter={StaticResource IsNotNullConverter}}" />
+                                                                    
+                                                                    <!-- Assignee Avatar -->
+                                                                    <Frame Grid.Column="2"
+                                                                           BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                                                           CornerRadius="12"
+                                                                           WidthRequest="24"
+                                                                           HeightRequest="24"
+                                                                           Padding="0"
+                                                                           HasShadow="False"
+                                                                           IsVisible="{Binding AssigneeId, Converter={StaticResource IsNotNullConverter}}">
+                                                                        <Label Text="{Binding AssigneeName, Converter={StaticResource NameToInitialsConverter}}"
+                                                                               FontSize="10"
+                                                                               FontAttributes="Bold"
+                                                                               TextColor="White"
+                                                                               HorizontalOptions="Center"
+                                                                               VerticalOptions="Center" />
+                                                                    </Frame>
+                                                                </Grid>
+                                                                
+                                                                <!-- Task Stats -->
+                                                                <StackLayout Grid.Row="3" Orientation="Horizontal" Spacing="10">
+                                                                    
+                                                                    <!-- Comments Count -->
+                                                                    <StackLayout Orientation="Horizontal" Spacing="3"
+                                                                                 IsVisible="{Binding CommentCount, Converter={StaticResource IsNotZeroConverter}}">
+                                                                        <Label Text="💬"
+                                                                               FontSize="10" />
+                                                                        <Label Text="{Binding CommentCount}"
+                                                                               FontSize="10"
+                                                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                                                    </StackLayout>
+                                                                    
+                                                                    <!-- Attachments Count -->
+                                                                    <StackLayout Orientation="Horizontal" Spacing="3"
+                                                                                 IsVisible="{Binding AttachmentCount, Converter={StaticResource IsNotZeroConverter}}">
+                                                                        <Label Text="📎"
+                                                                               FontSize="10" />
+                                                                        <Label Text="{Binding AttachmentCount}"
+                                                                               FontSize="10"
+                                                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                                                    </StackLayout>
+                                                                    
+                                                                    <!-- Time Estimate -->
+                                                                    <StackLayout Orientation="Horizontal" Spacing="3"
+                                                                                 IsVisible="{Binding EstimatedHours, Converter={StaticResource IsNotZeroConverter}}">
+                                                                        <Label Text="⏱️"
+                                                                               FontSize="10" />
+                                                                        <Label Text="{Binding EstimatedHours}h"
+                                                                               FontSize="10"
+                                                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                                                    </StackLayout>
+                                                                </StackLayout>
+                                                            </Grid>
+                                                            
+                                                            <Frame.GestureRecognizers>
+                                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:KanbanBoardViewModel}}, Path=SelectTaskCommand}"
+                                                                                      CommandParameter="{Binding .}" />
+                                                                <PointerGestureRecognizer PointerPressedCommand="{Binding Source={RelativeSource AncestorType={x:Type vm:KanbanBoardViewModel}}, Path=ShowTaskMoveMenuCommand}"
+                                                                                         PointerPressedCommandParameter="{Binding .}" />
+                                                            </Frame.GestureRecognizers>
+                                                        </Frame>
+                                                    </DataTemplate>
+                                                </CollectionView.ItemTemplate>
+                                            </CollectionView>
+                                        </ScrollView>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <!-- Loading Overlay -->
+        <Grid Grid.Row="2"
+              IsVisible="{Binding IsLoading}"
+              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+              Opacity="0.8">
+            <ActivityIndicator IsRunning="{Binding IsLoading}"
+                               Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               WidthRequest="50"
+                               HeightRequest="50"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+        </Grid>
+
+        <!-- Error Message -->
+        <Frame Grid.Row="2"
+               IsVisible="{Binding HasError}"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+               CornerRadius="0"
+               Padding="20"
+               HasShadow="False">
+            <StackLayout Spacing="20" HorizontalOptions="Center" VerticalOptions="Center">
+                <Label Text="⚠️"
+                       FontSize="48"
+                       HorizontalOptions="Center" />
+                
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+                
+                <Button Text="Try Again"
+                        Command="{Binding RefreshBoardCommand}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        TextColor="White"
+                        CornerRadius="20"
+                        Padding="30,10"
+                        HorizontalOptions="Center" />
+            </StackLayout>
+        </Frame>
+
+        <!-- Bottom Statistics Bar -->
+        <Frame Grid.Row="3"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+               CornerRadius="0"
+               Padding="15,10"
+               HasShadow="False">
+            <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="15">
+                
+                <!-- Total Tasks Count -->
+                <StackLayout Grid.Column="0" Orientation="Horizontal" Spacing="5">
+                    <Label Text="Total Tasks:"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                           VerticalOptions="Center" />
+                    <Label Text="{Binding TotalTasksCount}"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                           VerticalOptions="Center" />
+                </StackLayout>
+                
+                <!-- Refresh Button -->
+                <Button Grid.Column="1"
+                        Text="🔄"
+                        FontSize="14"
+                        BackgroundColor="Transparent"
+                        BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                        BorderWidth="1"
+                        CornerRadius="15"
+                        WidthRequest="30"
+                        HeightRequest="30"
+                        Command="{Binding RefreshBoardCommand}" />
+                
+                <!-- Project Info -->
+                <StackLayout Grid.Column="2" Orientation="Horizontal" Spacing="5" HorizontalOptions="End">
+                    <Label Text="Project:"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                           VerticalOptions="Center" />
+                    <Label Text="{Binding ProjectName}"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                           VerticalOptions="Center" />
+                </StackLayout>
+            </Grid>
+        </Frame>
+
+        <!-- Task Details Overlay -->
+        <Frame Grid.RowSpan="4"
+               IsVisible="{Binding IsTaskDetailsVisible}"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray900}}"
+               Opacity="0.95"
+               CornerRadius="0"
+               Padding="0"
+               HasShadow="False">
+            <Grid RowDefinitions="*,Auto">
+                <!-- Details Content -->
+                <ScrollView Grid.Row="0" Padding="20">
+                    <StackLayout Spacing="20" IsVisible="{Binding SelectedTask, Converter={StaticResource IsNotNullConverter}}">
+                        
+                        <!-- Header -->
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="15">
+                            <StackLayout Grid.Column="0">
+                                <Label Text="{Binding SelectedTask.Title}"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                
+                                <Label Text="{Binding SelectedTask.ProjectName}"
+                                       FontSize="14"
+                                       TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                            </StackLayout>
+                            
+                            <Button Grid.Column="1"
+                                    Text="✕"
+                                    FontSize="18"
+                                    BackgroundColor="Transparent"
+                                    TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                    Command="{Binding CloseTaskDetailsCommand}" />
+                        </Grid>
+
+                        <!-- Meta Information -->
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="20" RowSpacing="10">
+                            
+                            <!-- Status -->
+                            <StackLayout Grid.Row="0" Grid.Column="0">
+                                <Label Text="Status" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                <Frame BackgroundColor="{Binding SelectedTask.Status, Converter={StaticResource StatusToColorConverter}}"
+                                       CornerRadius="12" Padding="8,4" HasShadow="False">
+                                    <Label Text="{Binding SelectedTask.Status}" FontSize="12" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+                                </Frame>
+                            </StackLayout>
+                            
+                            <!-- Priority -->
+                            <StackLayout Grid.Row="0" Grid.Column="1">
+                                <Label Text="Priority" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                <Frame BackgroundColor="{Binding SelectedTask.Priority, Converter={StaticResource PriorityToColorConverter}}"
+                                       CornerRadius="12" Padding="8,4" HasShadow="False">
+                                    <Label Text="{Binding SelectedTask.Priority}" FontSize="12" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+                                </Frame>
+                            </StackLayout>
+                            
+                            <!-- Assignee -->
+                            <StackLayout Grid.Row="1" Grid.Column="0">
+                                <Label Text="Assigned to" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                <Label Text="{Binding SelectedTask.AssigneeName}" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                            </StackLayout>
+                            
+                            <!-- Due Date -->
+                            <StackLayout Grid.Row="1" Grid.Column="1">
+                                <Label Text="Due Date" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                <Label Text="{Binding SelectedTask.DueDate, StringFormat='{0:MMM dd, yyyy}'}" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                            </StackLayout>
+                            
+                            <!-- Time Estimate -->
+                            <StackLayout Grid.Row="2" Grid.Column="0">
+                                <Label Text="Estimated Hours" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                <Label Text="{Binding SelectedTask.EstimatedHours}" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                            </StackLayout>
+                            
+                            <!-- Actual Hours -->
+                            <StackLayout Grid.Row="2" Grid.Column="1">
+                                <Label Text="Actual Hours" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                <Label Text="{Binding SelectedTask.ActualHours}" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                            </StackLayout>
+                        </Grid>
+
+                        <!-- Description -->
+                        <StackLayout IsVisible="{Binding SelectedTask.Description, Converter={StaticResource IsNotNullConverter}}">
+                            <Label Text="Description" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                            <Label Text="{Binding SelectedTask.Description}" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                        </StackLayout>
+
+                        <!-- Quick Stats -->
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="15">
+                            <Frame Grid.Column="0" BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}" CornerRadius="8" Padding="10" HasShadow="False">
+                                <StackLayout HorizontalOptions="Center">
+                                    <Label Text="💬" FontSize="16" HorizontalOptions="Center" />
+                                    <Label Text="{Binding SelectedTask.CommentCount}" FontSize="14" FontAttributes="Bold" HorizontalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                    <Label Text="Comments" FontSize="10" HorizontalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                </StackLayout>
+                            </Frame>
+                            
+                            <Frame Grid.Column="1" BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}" CornerRadius="8" Padding="10" HasShadow="False">
+                                <StackLayout HorizontalOptions="Center">
+                                    <Label Text="📎" FontSize="16" HorizontalOptions="Center" />
+                                    <Label Text="{Binding SelectedTask.AttachmentCount}" FontSize="14" FontAttributes="Bold" HorizontalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                    <Label Text="Files" FontSize="10" HorizontalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                </StackLayout>
+                            </Frame>
+                            
+                            <Frame Grid.Column="2" BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}" CornerRadius="8" Padding="10" HasShadow="False">
+                                <StackLayout HorizontalOptions="Center">
+                                    <Label Text="⏱️" FontSize="16" HorizontalOptions="Center" />
+                                    <Label Text="{Binding SelectedTask.TimeEntries.Count}" FontSize="14" FontAttributes="Bold" HorizontalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                    <Label Text="Time Entries" FontSize="10" HorizontalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                </StackLayout>
+                            </Frame>
+                        </Grid>
+                    </StackLayout>
+                </ScrollView>
+
+                <!-- Action Buttons -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="10" Padding="20">
+                    <Button Grid.Column="0"
+                            Text="Edit Task"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            Command="{Binding EditTaskCommand}"
+                            CommandParameter="{Binding SelectedTask}" />
+                    
+                    <Button Grid.Column="1"
+                            Text="Move Task"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDark}}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            Command="{Binding ShowTaskMoveMenuCommand}"
+                            CommandParameter="{Binding SelectedTask}" />
+                </Grid>
+            </Grid>
+        </Frame>
+    </Grid>
     
 </ContentPage>

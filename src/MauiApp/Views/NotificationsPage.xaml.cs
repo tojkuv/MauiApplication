@@ -1,12 +1,12 @@
-using MauiApp.ViewModels.Reports;
+using MauiApp.ViewModels;
 
-namespace MauiApp.Views.Reports;
+namespace MauiApp.Views;
 
-public partial class ReportsPage : ContentPage
+public partial class NotificationsPage : ContentPage
 {
-    private readonly ReportsViewModel _viewModel;
+    private readonly NotificationsViewModel _viewModel;
 
-    public ReportsPage(ReportsViewModel viewModel)
+    public NotificationsPage(NotificationsViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;

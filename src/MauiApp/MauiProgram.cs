@@ -28,11 +28,16 @@ public static class MauiProgram
         builder.Services.AddDbContext<LocalDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
-        // Configure HTTP client
+        // Register authentication handler
+        builder.Services.AddTransient<AuthenticationHandler>();
+        
+        // Configure HTTP client with authentication handler
         builder.Services.AddHttpClient<IApiService, ApiService>(client =>
         {
             client.BaseAddress = new Uri("https://localhost:7001"); // Default to localhost for development
-        });
+            client.Timeout = TimeSpan.FromSeconds(30);
+        })
+        .AddHttpMessageHandler<AuthenticationHandler>();
 
         // Register services
         builder.Services.AddSingleton<INavigationService, NavigationService>();
@@ -45,6 +50,23 @@ public static class MauiProgram
         builder.Services.AddSingleton<IMonitoringService, MonitoringService>();
         builder.Services.AddSingleton<IOfflineSyncService, OfflineSyncService>();
         builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
+        builder.Services.AddSingleton<ISignalRService, SignalRService>();
+        builder.Services.AddSingleton<ICurrentUserService, CurrentUserService>();
+        builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
+        builder.Services.AddSingleton<ILocalNotificationService, LocalNotificationService>();
+        builder.Services.AddSingleton<IAnalyticsService, AnalyticsService>();
+        builder.Services.AddSingleton<IAnalyticsCacheService, AnalyticsCacheService>();
+        
+        // Notification Services
+        builder.Services.AddSingleton<ICacheService, CacheService>();
+        builder.Services.AddSingleton<INotificationDeliveryService, NotificationDeliveryService>();
+        builder.Services.AddSingleton<INotificationTemplateService, NotificationTemplateService>();
+        builder.Services.AddSingleton<INotificationSchedulingService, NotificationSchedulingService>();
+        builder.Services.AddSingleton<INotificationPreferencesService, NotificationPreferencesService>();
+        builder.Services.AddSingleton<INotificationQueueService, NotificationQueueService>();
+        
+        // Time Tracking Service
+        builder.Services.AddSingleton<ITimeTrackingService, TimeTrackingService>();
 
         // Register repositories
         builder.Services.AddScoped<ILocalProjectRepository, LocalProjectRepository>();
@@ -71,6 +93,19 @@ public static class MauiProgram
 
         // Task ViewModels
         builder.Services.AddTransient<MauiApp.ViewModels.Tasks.TasksListViewModel>();
+        builder.Services.AddTransient<MauiApp.ViewModels.Tasks.KanbanBoardViewModel>();
+
+        // Collaboration ViewModels
+        builder.Services.AddTransient<MauiApp.ViewModels.Collaboration.ChatViewModel>();
+
+        // Files ViewModels
+        builder.Services.AddTransient<MauiApp.ViewModels.Files.FilesViewModel>();
+
+        // Reports ViewModels
+        builder.Services.AddTransient<MauiApp.ViewModels.Reports.ReportsViewModel>();
+
+        // Other ViewModels
+        builder.Services.AddTransient<MauiApp.ViewModels.NotificationsViewModel>();
 
         // Register Pages
         builder.Services.AddTransient<MainPage>();
@@ -99,6 +134,7 @@ public static class MauiProgram
         builder.Services.AddTransient<MauiApp.Views.Files.FilesPage>();
         builder.Services.AddTransient<MauiApp.Views.Reports.ReportsPage>();
         builder.Services.AddTransient<MauiApp.Views.TimeTracking.TimeTrackingPage>();
+        builder.Services.AddTransient<MauiApp.Views.NotificationsPage>();
 
         builder.Services.AddMauiBlazorWebView();
 

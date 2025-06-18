@@ -108,7 +108,12 @@
 
     <!-- Tasks Section -->
     <FlyoutItem Title="Tasks" Icon="tasks.png" Route="tasks">
-        <ShellContent ContentTemplate="{DataTemplate tasks:TasksPage}" />
+        <Tab Title="Task List" Icon="tasks.png">
+            <ShellContent ContentTemplate="{DataTemplate tasks:TasksPage}" Route="list" />
+        </Tab>
+        <Tab Title="Kanban Board" Icon="kanban.png">
+            <ShellContent ContentTemplate="{DataTemplate tasks:KanbanBoardPage}" Route="kanban" />
+        </Tab>
     </FlyoutItem>
 
     <!-- Collaboration Section -->

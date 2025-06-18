@@ -152,14 +152,14 @@ public class ChatService : IChatService
             .Where(m => m.ProjectId == projectId && !m.IsDeleted)
             .OrderByDescending(m => m.SentAt);
 
-        if (request.BeforeDate.HasValue)
+        if (request.Before.HasValue)
         {
-            query = query.Where(m => m.SentAt < request.BeforeDate.Value);
+            query = query.Where(m => m.SentAt < request.Before.Value);
         }
 
-        if (request.AfterDate.HasValue)
+        if (request.After.HasValue)
         {
-            query = query.Where(m => m.SentAt > request.AfterDate.Value);
+            query = query.Where(m => m.SentAt > request.After.Value);
         }
 
         if (!string.IsNullOrEmpty(request.SearchTerm))
@@ -168,7 +168,8 @@ public class ChatService : IChatService
         }
 
         var messages = await query
-            .Take(request.PageSize ?? 50)
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
             .ToListAsync();
 
         return messages.Select(MapToDto);
@@ -392,12 +393,15 @@ public class ChatService : IChatService
 
         return new UserPresenceDto
         {
+            Id = savedPresence.Id,
             ProjectId = savedPresence.ProjectId,
             UserId = savedPresence.UserId,
-            UserName = savedPresence.User?.FirstName + " " + savedPresence.User?.LastName,
+            UserName = savedPresence.User?.FirstName + " " + savedPresence.User?.LastName ?? "Unknown User",
+            UserAvatarUrl = savedPresence.User?.AvatarUrl,
             Status = savedPresence.Status,
             Activity = savedPresence.Activity,
-            LastSeenAt = savedPresence.LastSeenAt
+            LastSeenAt = savedPresence.LastSeenAt,
+            UpdatedAt = savedPresence.LastSeenAt
         };
     }
 
@@ -410,12 +414,15 @@ public class ChatService : IChatService
 
         return presences.Select(p => new UserPresenceDto
         {
+            Id = p.Id,
             ProjectId = p.ProjectId,
             UserId = p.UserId,
-            UserName = p.User?.FirstName + " " + p.User?.LastName,
+            UserName = p.User?.FirstName + " " + p.User?.LastName ?? "Unknown User",
+            UserAvatarUrl = p.User?.AvatarUrl,
             Status = p.Status,
             Activity = p.Activity,
-            LastSeenAt = p.LastSeenAt
+            LastSeenAt = p.LastSeenAt,
+            UpdatedAt = p.LastSeenAt
         });
     }
 
@@ -432,12 +439,15 @@ public class ChatService : IChatService
 
         return new UserPresenceDto
         {
+            Id = presence.Id,
             ProjectId = presence.ProjectId,
             UserId = presence.UserId,
-            UserName = presence.User?.FirstName + " " + presence.User?.LastName,
+            UserName = presence.User?.FirstName + " " + presence.User?.LastName ?? "Unknown User",
+            UserAvatarUrl = presence.User?.AvatarUrl,
             Status = presence.Status,
             Activity = presence.Activity,
-            LastSeenAt = presence.LastSeenAt
+            LastSeenAt = presence.LastSeenAt,
+            UpdatedAt = presence.LastSeenAt
         };
     }
 
@@ -457,18 +467,34 @@ public class ChatService : IChatService
             .OrderByDescending(m => m.SentAt)
             .FirstOrDefaultAsync();
 
-        var activeUsers = await _context.UserPresences
+        var onlineUsers = await _context.UserPresences
             .Include(p => p.User)
             .Where(p => p.ProjectId == projectId && p.Status == "online")
-            .CountAsync();
+            .Select(p => new UserPresenceDto
+            {
+                Id = p.Id,
+                ProjectId = p.ProjectId,
+                UserId = p.UserId,
+                UserName = p.User!.FirstName + " " + p.User.LastName,
+                UserAvatarUrl = p.User.AvatarUrl,
+                Status = p.Status,
+                Activity = p.Activity,
+                LastSeenAt = p.LastSeenAt,
+                UpdatedAt = p.LastSeenAt
+            })
+            .ToListAsync();
+
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
 
         return new ProjectChatSummaryDto
         {
             ProjectId = projectId,
+            ProjectName = project?.Name ?? "Unknown Project",
             TotalMessages = totalMessages,
             UnreadCount = unreadCount,
             LastMessage = lastMessage != null ? MapToDto(lastMessage) : null,
-            ActiveUsers = activeUsers
+            OnlineUsers = onlineUsers,
+            LastActivity = lastMessage?.SentAt ?? DateTime.MinValue
         };
     }
 
@@ -494,11 +520,13 @@ public class ChatService : IChatService
         {
             Id = connection.Id,
             UserId = connection.UserId,
+            UserName = "Unknown User", // We don't have user data in this context
             ConnectionId = connection.ConnectionId,
             UserAgent = connection.UserAgent,
             IpAddress = connection.IpAddress,
             ConnectedAt = connection.ConnectedAt,
-            LastSeenAt = connection.LastSeenAt
+            LastSeenAt = connection.LastSeenAt,
+            IsActive = true
         };
     }
 
@@ -544,11 +572,13 @@ public class ChatService : IChatService
         {
             Id = c.Id,
             UserId = c.UserId,
+            UserName = "Unknown User", // Would need to join with Users table for real name
             ConnectionId = c.ConnectionId,
             UserAgent = c.UserAgent,
             IpAddress = c.IpAddress,
             ConnectedAt = c.ConnectedAt,
-            LastSeenAt = c.LastSeenAt
+            LastSeenAt = c.LastSeenAt,
+            IsActive = true
         });
     }
 
@@ -570,28 +600,33 @@ public class ChatService : IChatService
         {
             Id = message.Id,
             ProjectId = message.ProjectId,
-            SenderId = message.SenderId,
-            SenderName = message.Sender?.FirstName + " " + message.Sender?.LastName,
+            AuthorId = message.SenderId,
+            AuthorName = message.Sender?.FirstName + " " + message.Sender?.LastName ?? "Unknown User",
+            AuthorEmail = message.Sender?.Email ?? "",
+            AuthorAvatarUrl = message.Sender?.AvatarUrl,
             Content = message.Content,
             MessageType = message.MessageType,
-            SentAt = message.SentAt,
             IsEdited = message.IsEdited,
-            EditedAt = message.EditedAt,
+            IsDeleted = message.IsDeleted,
+            CreatedAt = message.SentAt,
+            UpdatedAt = message.EditedAt ?? message.SentAt,
             ReplyToMessageId = message.ReplyToMessageId,
             ReplyToMessage = message.ReplyToMessage != null ? new ChatMessageDto
             {
                 Id = message.ReplyToMessage.Id,
-                SenderId = message.ReplyToMessage.SenderId,
-                SenderName = message.ReplyToMessage.Sender?.FirstName + " " + message.ReplyToMessage.Sender?.LastName,
+                AuthorId = message.ReplyToMessage.SenderId,
+                AuthorName = message.ReplyToMessage.Sender?.FirstName + " " + message.ReplyToMessage.Sender?.LastName ?? "Unknown User",
+                AuthorEmail = message.ReplyToMessage.Sender?.Email ?? "",
                 Content = message.ReplyToMessage.Content,
-                SentAt = message.ReplyToMessage.SentAt
+                CreatedAt = message.ReplyToMessage.SentAt,
+                UpdatedAt = message.ReplyToMessage.SentAt
             } : null,
             Reactions = message.Reactions?.Select(r => new MessageReactionDto
             {
                 Id = r.Id,
                 MessageId = r.MessageId,
                 UserId = r.UserId,
-                UserName = r.User?.FirstName + " " + r.User?.LastName,
+                UserName = r.User?.FirstName + " " + r.User?.LastName ?? "Unknown User",
                 Reaction = r.Reaction,
                 CreatedAt = r.CreatedAt
             }).ToList() ?? new List<MessageReactionDto>(),
@@ -600,9 +635,10 @@ public class ChatService : IChatService
                 Id = rs.Id,
                 MessageId = rs.MessageId,
                 UserId = rs.UserId,
-                UserName = rs.User?.FirstName + " " + rs.User?.LastName,
+                UserName = rs.User?.FirstName + " " + rs.User?.LastName ?? "Unknown User",
                 ReadAt = rs.ReadAt
-            }).ToList() ?? new List<MessageReadStatusDto>()
+            }).ToList() ?? new List<MessageReadStatusDto>(),
+            ReplyCount = 0
         };
     }
 }

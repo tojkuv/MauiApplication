@@ -30,20 +30,22 @@ public class CollaborationController : ControllerBase
     [HttpGet("projects/{projectId}/messages")]
     public async Task<ActionResult<IEnumerable<ChatMessageDto>>> GetChatHistory(
         Guid projectId,
-        [FromQuery] DateTime? beforeDate = null,
-        [FromQuery] DateTime? afterDate = null,
-        [FromQuery] string? searchTerm = null,
-        [FromQuery] int? pageSize = 50)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] DateTime? before = null,
+        [FromQuery] DateTime? after = null,
+        [FromQuery] string? searchTerm = null)
     {
         try
         {
             var userId = GetUserId();
             var request = new ChatHistoryRequest
             {
-                BeforeDate = beforeDate,
-                AfterDate = afterDate,
-                SearchTerm = searchTerm,
-                PageSize = pageSize
+                Page = page,
+                PageSize = pageSize,
+                Before = before,
+                After = after,
+                SearchTerm = searchTerm
             };
 
             var messages = await _chatService.GetChatHistoryAsync(projectId, userId, request);

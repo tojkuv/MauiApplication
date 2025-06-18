@@ -2,24 +2,419 @@
 <ContentPage x:Class="MauiApp.Views.Collaboration.ChatPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             Title="Team Chat">
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MauiApp.ViewModels.Collaboration"
+             xmlns:core="clr-namespace:MauiApp.Core.DTOs;assembly=MauiApp.Core"
+             Title="{Binding ProjectName, StringFormat='{0} - Chat'}"
+             x:DataType="vm:ChatViewModel">
 
-    <ScrollView>
-        <StackLayout Padding="20" Spacing="20">
-            <Label Text="Team Chat"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center" />
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+        
+        <!-- Header with Connection Status and Online Users -->
+        <Grid Grid.Row="0" Padding="15,10" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10"
+              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
             
-            <Label Text="Chat functionality coming soon!"
-                   FontSize="16"
-                   HorizontalOptions="Center"
-                   TextColor="Gray" />
+            <!-- Connection Status -->
+            <StackLayout Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalOptions="Center">
+                <Ellipse Fill="{Binding IsConnected, Converter={StaticResource BoolToConnectionColorConverter}}"
+                         WidthRequest="8" HeightRequest="8" />
+                <Label Text="{Binding ConnectionStatus}"
+                       FontSize="12"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                       VerticalOptions="Center" />
+            </StackLayout>
             
-            <Button Text="Go Back"
-                    Command="{Binding BackCommand}"
-                    HorizontalOptions="Center" />
+            <!-- Online Users Count -->
+            <StackLayout Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalOptions="Center">
+                <Label Text="👥"
+                       FontSize="14" />
+                <Label Text="{Binding OnlineUsers.Count}"
+                       FontSize="12"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                       VerticalOptions="Center" />
+                <Label Text="online"
+                       FontSize="12"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                       VerticalOptions="Center" />
+            </StackLayout>
+            
+            <!-- Menu Button -->
+            <Button Grid.Column="2"
+                    Text="⋮"
+                    FontSize="16"
+                    BackgroundColor="Transparent"
+                    TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                    WidthRequest="40"
+                    HeightRequest="30"
+                    Command="{Binding ShowChatMenuCommand}" />
+        </Grid>
+
+        <!-- Messages Area -->
+        <ScrollView Grid.Row="1" x:Name="MessagesScrollView" Padding="15,0">
+            <StackLayout Spacing="0">
+                
+                <!-- Load More Button -->
+                <Button Text="Load older messages"
+                        FontSize="12"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        Command="{Binding LoadMoreMessagesCommand}"
+                        Margin="0,10"
+                        IsVisible="{Binding Messages.Count, Converter={StaticResource IsNotZeroConverter}}" />
+                
+                <!-- Messages List -->
+                <CollectionView ItemsSource="{Binding Messages}"
+                                BackgroundColor="Transparent"
+                                VerticalScrollBarVisibility="Never">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="core:ChatMessageDto">
+                            <Grid Margin="0,8" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                
+                                <!-- Message Layout - Different for own vs others -->
+                                <Grid Grid.ColumnSpan="3"
+                                      ColumnDefinitions="Auto,*,Auto"
+                                      ColumnSpacing="8">
+                                    
+                                    <!-- Other User's Message -->
+                                    <StackLayout Grid.Column="0" Grid.ColumnSpan="2"
+                                                 IsVisible="{Binding AuthorId, Converter={StaticResource IsNotCurrentUserConverter}}">
+                                        
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                            
+                                            <!-- User Avatar -->
+                                            <Frame Grid.Column="0"
+                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                                   CornerRadius="20"
+                                                   WidthRequest="40"
+                                                   HeightRequest="40"
+                                                   Padding="0"
+                                                   HasShadow="False"
+                                                   VerticalOptions="Start">
+                                                <Label Text="{Binding AuthorName, Converter={StaticResource NameToInitialsConverter}}"
+                                                       FontSize="14"
+                                                       FontAttributes="Bold"
+                                                       TextColor="White"
+                                                       HorizontalOptions="Center"
+                                                       VerticalOptions="Center" />
+                                            </Frame>
+                                            
+                                            <!-- Message Content -->
+                                            <StackLayout Grid.Column="1" Spacing="4">
+                                                
+                                                <!-- Author and Time -->
+                                                <StackLayout Orientation="Horizontal" Spacing="8">
+                                                    <Label Text="{Binding AuthorName}"
+                                                           FontSize="12"
+                                                           FontAttributes="Bold"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                                    <Label Text="{Binding CreatedAt, StringFormat='{0:HH:mm}'}"
+                                                           FontSize="10"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                                    <Label Text="(edited)"
+                                                           FontSize="10"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                                           IsVisible="{Binding IsEdited}" />
+                                                </StackLayout>
+                                                
+                                                <!-- Reply To Message (if any) -->
+                                                <Frame IsVisible="{Binding ReplyToMessage, Converter={StaticResource IsNotNullConverter}}"
+                                                       BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"
+                                                       CornerRadius="8"
+                                                       Padding="8"
+                                                       Margin="0,0,0,4"
+                                                       HasShadow="False">
+                                                    <StackLayout Spacing="2">
+                                                        <Label Text="{Binding ReplyToMessage.AuthorName}"
+                                                               FontSize="10"
+                                                               FontAttributes="Bold"
+                                                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                                        <Label Text="{Binding ReplyToMessage.Content}"
+                                                               FontSize="10"
+                                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                               LineBreakMode="TailTruncation"
+                                                               MaxLines="2" />
+                                                    </StackLayout>
+                                                </Frame>
+                                                
+                                                <!-- Message Bubble -->
+                                                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}"
+                                                       CornerRadius="16"
+                                                       Padding="12"
+                                                       HasShadow="False"
+                                                       MaximumWidthRequest="280">
+                                                    <Label Text="{Binding Content}"
+                                                           FontSize="14"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                                           LineBreakMode="WordWrap" />
+                                                    
+                                                    <Frame.GestureRecognizers>
+                                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ChatViewModel}}, Path=ShowMessageOptionsCommand}"
+                                                                              CommandParameter="{Binding .}" />
+                                                    </Frame.GestureRecognizers>
+                                                </Frame>
+                                                
+                                                <!-- Reactions -->
+                                                <CollectionView ItemsSource="{Binding Reactions}"
+                                                                BackgroundColor="Transparent"
+                                                                IsVisible="{Binding Reactions.Count, Converter={StaticResource IsNotZeroConverter}}">
+                                                    <CollectionView.ItemsLayout>
+                                                        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="4" />
+                                                    </CollectionView.ItemsLayout>
+                                                    <CollectionView.ItemTemplate>
+                                                        <DataTemplate x:DataType="core:MessageReactionDto">
+                                                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                                                   CornerRadius="12"
+                                                                   Padding="6,2"
+                                                                   HasShadow="False">
+                                                                <StackLayout Orientation="Horizontal" Spacing="3">
+                                                                    <Label Text="{Binding Reaction}"
+                                                                           FontSize="12" />
+                                                                    <Label Text="1"
+                                                                           FontSize="10"
+                                                                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                                                </StackLayout>
+                                                                
+                                                                <Frame.GestureRecognizers>
+                                                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ChatViewModel}}, Path=RemoveReactionCommand}"
+                                                                                          CommandParameter="{Binding .}" />
+                                                                </Frame.GestureRecognizers>
+                                                            </Frame>
+                                                        </DataTemplate>
+                                                    </CollectionView.ItemTemplate>
+                                                </CollectionView>
+                                            </StackLayout>
+                                        </Grid>
+                                    </StackLayout>
+                                    
+                                    <!-- Current User's Message -->
+                                    <StackLayout Grid.Column="1" Grid.ColumnSpan="2"
+                                                 IsVisible="{Binding AuthorId, Converter={StaticResource IsCurrentUserConverter}}"
+                                                 HorizontalOptions="End">
+                                        
+                                        <StackLayout Spacing="4" HorizontalOptions="End">
+                                            
+                                            <!-- Time and Status -->
+                                            <StackLayout Orientation="Horizontal" Spacing="8" HorizontalOptions="End">
+                                                <Label Text="{Binding CreatedAt, StringFormat='{0:HH:mm}'}"
+                                                       FontSize="10"
+                                                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                                                <Label Text="(edited)"
+                                                       FontSize="10"
+                                                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                                       IsVisible="{Binding IsEdited}" />
+                                            </StackLayout>
+                                            
+                                            <!-- Reply To Message (if any) -->
+                                            <Frame IsVisible="{Binding ReplyToMessage, Converter={StaticResource IsNotNullConverter}}"
+                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"
+                                                   CornerRadius="8"
+                                                   Padding="8"
+                                                   Margin="0,0,0,4"
+                                                   HasShadow="False"
+                                                   HorizontalOptions="End"
+                                                   MaximumWidthRequest="220">
+                                                <StackLayout Spacing="2">
+                                                    <Label Text="{Binding ReplyToMessage.AuthorName}"
+                                                           FontSize="10"
+                                                           FontAttributes="Bold"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                                           HorizontalTextAlignment="End" />
+                                                    <Label Text="{Binding ReplyToMessage.Content}"
+                                                           FontSize="10"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                           LineBreakMode="TailTruncation"
+                                                           MaxLines="2"
+                                                           HorizontalTextAlignment="End" />
+                                                </StackLayout>
+                                            </Frame>
+                                            
+                                            <!-- Message Bubble -->
+                                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                                   CornerRadius="16"
+                                                   Padding="12"
+                                                   HasShadow="False"
+                                                   MaximumWidthRequest="280"
+                                                   HorizontalOptions="End">
+                                                <Label Text="{Binding Content}"
+                                                       FontSize="14"
+                                                       TextColor="White"
+                                                       LineBreakMode="WordWrap" />
+                                                
+                                                <Frame.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ChatViewModel}}, Path=ShowMessageOptionsCommand}"
+                                                                          CommandParameter="{Binding .}" />
+                                                </Frame.GestureRecognizers>
+                                            </Frame>
+                                            
+                                            <!-- Reactions -->
+                                            <CollectionView ItemsSource="{Binding Reactions}"
+                                                            BackgroundColor="Transparent"
+                                                            IsVisible="{Binding Reactions.Count, Converter={StaticResource IsNotZeroConverter}}"
+                                                            HorizontalOptions="End">
+                                                <CollectionView.ItemsLayout>
+                                                    <LinearItemsLayout Orientation="Horizontal" ItemSpacing="4" />
+                                                </CollectionView.ItemsLayout>
+                                                <CollectionView.ItemTemplate>
+                                                    <DataTemplate x:DataType="core:MessageReactionDto">
+                                                        <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                                               CornerRadius="12"
+                                                               Padding="6,2"
+                                                               HasShadow="False">
+                                                            <StackLayout Orientation="Horizontal" Spacing="3">
+                                                                <Label Text="{Binding Reaction}"
+                                                                       FontSize="12" />
+                                                                <Label Text="1"
+                                                                       FontSize="10"
+                                                                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                                            </StackLayout>
+                                                            
+                                                            <Frame.GestureRecognizers>
+                                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ChatViewModel}}, Path=RemoveReactionCommand}"
+                                                                                      CommandParameter="{Binding .}" />
+                                                            </Frame.GestureRecognizers>
+                                                        </Frame>
+                                                    </DataTemplate>
+                                                </CollectionView.ItemTemplate>
+                                            </CollectionView>
+                                        </StackLayout>
+                                    </StackLayout>
+                                </Grid>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Typing Indicators -->
+        <StackLayout Grid.Row="2" Orientation="Horizontal" Spacing="5" Padding="15,5"
+                     IsVisible="{Binding TypingUsers.Count, Converter={StaticResource IsNotZeroConverter}}">
+            <Label Text="💬"
+                   FontSize="12" />
+            <Label FontSize="12"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}">
+                <Label.Text>
+                    <MultiBinding StringFormat="{}{0} {1} typing...">
+                        <Binding Path="TypingUsers" Converter="{StaticResource TypingUsersToStringConverter}" />
+                        <Binding Path="TypingUsers.Count" Converter="{StaticResource CountToIsAreConverter}" />
+                    </MultiBinding>
+                </Label.Text>
+            </Label>
         </StackLayout>
-    </ScrollView>
+
+        <!-- Reply Banner -->
+        <Frame Grid.Row="3"
+               IsVisible="{Binding ReplyingToMessage, Converter={StaticResource IsNotNullConverter}}"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+               CornerRadius="0"
+               Padding="15,8"
+               HasShadow="False">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                <Label Grid.Column="0"
+                       Text="↩️"
+                       FontSize="16"
+                       VerticalOptions="Center" />
+                
+                <StackLayout Grid.Column="1" Spacing="2">
+                    <Label Text="{Binding ReplyingToMessage.AuthorName, StringFormat='Replying to {0}'}"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                    <Label Text="{Binding ReplyingToMessage.Content}"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                           LineBreakMode="TailTruncation"
+                           MaxLines="1" />
+                </StackLayout>
+                
+                <Button Grid.Column="2"
+                        Text="✕"
+                        FontSize="14"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                        WidthRequest="30"
+                        HeightRequest="30"
+                        Command="{Binding CancelReplyCommand}" />
+            </Grid>
+        </Frame>
+
+        <!-- Message Input Area -->
+        <Grid Grid.Row="3" Padding="15" ColumnDefinitions="*,Auto" ColumnSpacing="10"
+              BackgroundColor="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray800}}">
+            
+            <!-- Message Entry -->
+            <Frame Grid.Column="0"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray700}}"
+                   CornerRadius="20"
+                   Padding="0"
+                   HasShadow="False">
+                <Entry x:Name="MessageEntry"
+                       Text="{Binding MessageText}"
+                       Placeholder="Type a message..."
+                       FontSize="14"
+                       BackgroundColor="Transparent"
+                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray500}}"
+                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                       ReturnType="Send"
+                       ReturnCommand="{Binding SendMessageCommand}"
+                       MaxLength="2000" />
+            </Frame>
+            
+            <!-- Send Button -->
+            <Button Grid.Column="1"
+                    Text="{Binding IsSendingMessage, Converter={StaticResource BoolToSendIconConverter}}"
+                    FontSize="16"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                    TextColor="White"
+                    CornerRadius="25"
+                    WidthRequest="50"
+                    HeightRequest="50"
+                    Command="{Binding SendMessageCommand}"
+                    IsEnabled="{Binding IsSendingMessage, Converter={StaticResource InvertedBoolConverter}}" />
+        </Grid>
+
+        <!-- Loading Overlay -->
+        <Grid Grid.RowSpan="4"
+              IsVisible="{Binding IsLoading}"
+              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+              Opacity="0.8">
+            <ActivityIndicator IsRunning="{Binding IsLoading}"
+                               Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                               WidthRequest="50"
+                               HeightRequest="50"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+        </Grid>
+
+        <!-- Error Message -->
+        <Frame Grid.RowSpan="4"
+               IsVisible="{Binding HasError}"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+               CornerRadius="0"
+               Padding="20"
+               HasShadow="False">
+            <StackLayout Spacing="20" HorizontalOptions="Center" VerticalOptions="Center">
+                <Label Text="❌"
+                       FontSize="48"
+                       HorizontalOptions="Center" />
+                
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+                
+                <Button Text="Try Again"
+                        Command="{Binding InitializeCommand}"
+                        CommandParameter="{Binding SelectedProjectId}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                        TextColor="White"
+                        CornerRadius="20"
+                        Padding="30,10"
+                        HorizontalOptions="Center" />
+            </StackLayout>
+        </Frame>
+    </Grid>
     
 </ContentPage>

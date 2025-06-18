@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiApp.Views.NotificationsPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:MauiApp.Converters"
+             Title="Notifications">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Mark All Read" 
+                     Command="{Binding MarkAllAsReadCommand}"
+                     IconImageSource="mark_read_icon.png" />
+        <ToolbarItem Text="Clear All" 
+                     Command="{Binding ClearAllNotificationsCommand}"
+                     IconImageSource="clear_icon.png" />
+        <ToolbarItem Text="Settings" 
+                     Command="{Binding RequestPermissionCommand}"
+                     IconImageSource="settings_icon.png" />
+    </ContentPage.ToolbarItems>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header Stats -->
+        <Frame Grid.Row="0"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+               Padding="15"
+               Margin="10,5"
+               CornerRadius="8"
+               HasShadow="False">
+            <StackLayout Orientation="Horizontal" Spacing="20">
+                <StackLayout Spacing="2">
+                    <Label Text="{Binding UnreadCount}"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center" />
+                    <Label Text="Unread"
+                           FontSize="12"
+                           TextColor="White"
+                           HorizontalOptions="Center" />
+                </StackLayout>
+                
+                <StackLayout Spacing="2">
+                    <Label Text="{Binding Notifications.Count}"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center" />
+                    <Label Text="Total"
+                           FontSize="12"
+                           TextColor="White"
+                           HorizontalOptions="Center" />
+                </StackLayout>
+                
+                <StackLayout Spacing="2" HorizontalOptions="EndAndExpand">
+                    <Label Text="{Binding NotificationsEnabled, Converter={StaticResource BoolToStatusConverter}}"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center" />
+                    <Label Text="Status"
+                           FontSize="12"
+                           TextColor="White"
+                           HorizontalOptions="Center" />
+                </StackLayout>
+            </StackLayout>
+        </Frame>
+
+        <!-- Filter Tabs -->
+        <ScrollView Grid.Row="1" Orientation="Horizontal" Margin="10,0">
+            <StackLayout Orientation="Horizontal" Spacing="10">
+                <Button Text="All"
+                        Command="{Binding ChangeFilterCommand}"
+                        CommandParameter="all"
+                        BackgroundColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='all', FalseColor='Transparent', TrueColor='{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}'}"
+                        TextColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='all', FalseColor='Gray', TrueColor='White'}"
+                        CornerRadius="15"
+                        Padding="15,8"
+                        FontSize="12" />
+                
+                <Button Text="Unread"
+                        Command="{Binding ChangeFilterCommand}"
+                        CommandParameter="unread"
+                        BackgroundColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='unread', FalseColor='Transparent', TrueColor='{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}'}"
+                        TextColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='unread', FalseColor='Gray', TrueColor='White'}"
+                        CornerRadius="15"
+                        Padding="15,8"
+                        FontSize="12" />
+                
+                <Button Text="Tasks"
+                        Command="{Binding ChangeFilterCommand}"
+                        CommandParameter="tasks"
+                        BackgroundColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='tasks', FalseColor='Transparent', TrueColor='{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}'}"
+                        TextColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='tasks', FalseColor='Gray', TrueColor='White'}"
+                        CornerRadius="15"
+                        Padding="15,8"
+                        FontSize="12" />
+                
+                <Button Text="Projects"
+                        Command="{Binding ChangeFilterCommand}"
+                        CommandParameter="projects"
+                        BackgroundColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='projects', FalseColor='Transparent', TrueColor='{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}'}"
+                        TextColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='projects', FalseColor='Gray', TrueColor='White'}"
+                        CornerRadius="15"
+                        Padding="15,8"
+                        FontSize="12" />
+                
+                <Button Text="Comments"
+                        Command="{Binding ChangeFilterCommand}"
+                        CommandParameter="comments"
+                        BackgroundColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='comments', FalseColor='Transparent', TrueColor='{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}'}"
+                        TextColor="{Binding FilterType, Converter={StaticResource StringEqualsConverter}, ConverterParameter='comments', FalseColor='Gray', TrueColor='White'}"
+                        CornerRadius="15"
+                        Padding="15,8"
+                        FontSize="12" />
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Notifications List -->
+        <RefreshView Grid.Row="2"
+                     Command="{Binding RefreshCommand}"
+                     IsRefreshing="{Binding IsRefreshing}">
+            
+            <CollectionView ItemsSource="{Binding Notifications}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <!-- Swipe Actions -->
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Mark Read"
+                                               BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDark}}"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.MarkAsReadCommand}"
+                                               CommandParameter="{Binding .}"
+                                               IsVisible="{Binding IsRead, Converter={StaticResource InvertedBoolConverter}}" />
+                                    <SwipeItem Text="Delete"
+                                               BackgroundColor="Red"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteNotificationCommand}"
+                                               CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray800}}"
+                                   CornerRadius="8"
+                                   Padding="15"
+                                   Margin="10,5"
+                                   HasShadow="False"
+                                   BorderColor="{Binding IsRead, Converter={StaticResource BoolToColorConverter}, FalseColor='{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}', TrueColor='Transparent'}"
+                                   StrokeThickness="{Binding IsRead, Converter={StaticResource BoolToThicknessConverter}, FalseValue='2', TrueValue='0'}">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShowNotificationDetailsCommand}"
+                                                          CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+                                
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <!-- Notification Icon -->
+                                    <Frame Grid.Column="0"
+                                           BackgroundColor="{Binding Priority, Converter={StaticResource PriorityToColorConverter}}"
+                                           WidthRequest="40"
+                                           HeightRequest="40"
+                                           CornerRadius="20"
+                                           Padding="0"
+                                           VerticalOptions="Start"
+                                           Margin="0,0,15,0">
+                                        <Label Text="{Binding Type, Converter={StaticResource NotificationTypeToIconConverter}}"
+                                               FontSize="18"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"
+                                               TextColor="White" />
+                                    </Frame>
+                                    
+                                    <!-- Notification Content -->
+                                    <StackLayout Grid.Column="1" Spacing="4">
+                                        <Label Text="{Binding Title}"
+                                               FontSize="16"
+                                               FontAttributes="{Binding IsRead, Converter={StaticResource BoolToFontAttributesConverter}, FalseValue='Bold', TrueValue='None'}"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="1" />
+                                        
+                                        <Label Text="{Binding Message}"
+                                               FontSize="14"
+                                               TextColor="Gray"
+                                               LineBreakMode="WordWrap"
+                                               MaxLines="2" />
+                                        
+                                        <StackLayout Orientation="Horizontal" Spacing="10">
+                                            <Label Text="{Binding CreatedAt, StringFormat='{0:MMM dd, HH:mm}'}"
+                                                   FontSize="12"
+                                                   TextColor="Gray" />
+                                            
+                                            <Label Text="{Binding Type, Converter={StaticResource NotificationTypeToStringConverter}}"
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}"
+                                                   Padding="6,2"
+                                                   HorizontalOptions="Start" />
+                                        </StackLayout>
+                                    </StackLayout>
+                                    
+                                    <!-- Unread Indicator -->
+                                    <Ellipse Grid.Column="2"
+                                             Fill="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                             WidthRequest="8"
+                                             HeightRequest="8"
+                                             VerticalOptions="Start"
+                                             HorizontalOptions="End"
+                                             IsVisible="{Binding IsRead, Converter={StaticResource InvertedBoolConverter}}" />
+                                </Grid>
+                            </Frame>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <StackLayout HorizontalOptions="Center"
+                                 VerticalOptions="Center"
+                                 Spacing="20"
+                                 Padding="20">
+                        <Label Text="🔔"
+                               FontSize="64"
+                               HorizontalOptions="Center"
+                               TextColor="Gray" />
+                        <Label Text="No notifications"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               TextColor="Gray" />
+                        <Label Text="You're all caught up!"
+                               FontSize="14"
+                               HorizontalOptions="Center"
+                               TextColor="Gray" />
+                    </StackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="2"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+        <!-- Error Message -->
+        <Frame Grid.Row="3"
+               BackgroundColor="Red"
+               Padding="15"
+               Margin="10"
+               CornerRadius="8"
+               HasShadow="False"
+               IsVisible="{Binding HasError}">
+            <StackLayout Orientation="Horizontal" Spacing="10">
+                <Label Text="⚠️" FontSize="16" TextColor="White" VerticalOptions="Center" />
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="White"
+                       VerticalOptions="Center"
+                       HorizontalOptions="FillAndExpand" />
+                <Button Text="✕"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="16"
+                        Command="{Binding ClearErrorCommand}" />
+            </StackLayout>
+        </Frame>
+
+        <!-- Permission Request -->
+        <Frame Grid.Row="3"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Warning}, Dark={StaticResource WarningDark}}"
+               Padding="15"
+               Margin="10"
+               CornerRadius="8"
+               HasShadow="False"
+               IsVisible="{Binding NotificationsEnabled, Converter={StaticResource InvertedBoolConverter}}">
+            <StackLayout Spacing="10">
+                <Label Text="📱 Enable notifications to stay updated on your projects and tasks"
+                       FontSize="14"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                <Button Text="Enable Notifications"
+                        Command="{Binding RequestPermissionCommand}"
+                        BackgroundColor="White"
+                        TextColor="{AppThemeBinding Light={StaticResource Warning}, Dark={StaticResource WarningDark}}"
+                        CornerRadius="20"
+                        Padding="20,10"
+                        HorizontalOptions="Center" />
+            </StackLayout>
+        </Frame>
+    </Grid>
+</ContentPage>

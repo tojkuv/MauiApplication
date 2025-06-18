@@ -280,104 +280,743 @@ public class FilesService : IFilesService
     // Additional implementation methods would go here...
     // For brevity, I'm including just the core methods
 
-    public Task<ProjectFileDto> UpdateFileAsync(Guid fileId, FileUpdateRequest request, Guid userId)
+    public async Task<ProjectFileDto> UpdateFileAsync(Guid fileId, FileUpdateRequest request, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .Include(f => f.Project)
+            .Include(f => f.UploadedBy)
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        // Only file uploader or project admin can update
+        var canUpdate = file.UploadedById == userId || await IsProjectAdminAsync(file.ProjectId, userId);
+        if (!canUpdate)
+        {
+            throw new UnauthorizedAccessException("Insufficient permissions to update this file");
+        }
+
+        // Update metadata
+        if (!string.IsNullOrEmpty(request.Description))
+        {
+            file.Description = request.Description;
+        }
+
+        if (!string.IsNullOrEmpty(request.FolderPath))
+        {
+            file.FolderPath = request.FolderPath;
+        }
+
+        if (!string.IsNullOrEmpty(request.FileName) && request.FileName != file.FileName)
+        {
+            file.FileName = request.FileName;
+        }
+
+        file.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return MapToProjectFileDto(file);
     }
 
-    public Task<Stream> DownloadFileByShareTokenAsync(string shareToken)
+    public async Task<Stream> DownloadFileByShareTokenAsync(string shareToken)
     {
-        throw new NotImplementedException();
+        var share = await _context.FileShares
+            .Include(s => s.File)
+            .FirstOrDefaultAsync(s => s.ShareToken == shareToken && 
+                                    s.IsActive && 
+                                    !s.File.IsDeleted &&
+                                    (s.ExpiresAt == null || s.ExpiresAt > DateTime.UtcNow));
+
+        if (share == null)
+        {
+            throw new UnauthorizedAccessException("Invalid or expired share token");
+        }
+
+        // Update download count
+        share.DownloadCount++;
+        share.LastAccessedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        var containerClient = _blobServiceClient.GetBlobContainerClient(share.File.StorageContainer);
+        var blobClient = containerClient.GetBlobClient(share.File.StoragePath);
+
+        var response = await blobClient.DownloadStreamingAsync();
+        return response.Value.Content;
     }
 
-    public Task<string> GenerateDownloadUrlAsync(Guid fileId, Guid userId, TimeSpan? expiry = null)
+    public async Task<string> GenerateDownloadUrlAsync(Guid fileId, Guid userId, TimeSpan? expiry = null)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        var containerClient = _blobServiceClient.GetBlobContainerClient(file.StorageContainer);
+        var blobClient = containerClient.GetBlobClient(file.StoragePath);
+
+        // Generate SAS URL with expiry (default 1 hour)
+        var expiryTime = expiry ?? TimeSpan.FromHours(1);
+        var sasUrl = blobClient.GenerateSasUri(Azure.Storage.Sas.BlobSasPermissions.Read, DateTimeOffset.UtcNow.Add(expiryTime));
+        
+        return sasUrl.ToString();
     }
 
-    public Task<ProjectFileDto> UploadFileVersionAsync(Guid fileId, Stream fileStream, string changeDescription, Guid userId)
+    public async Task<ProjectFileDto> UploadFileVersionAsync(Guid fileId, Stream fileStream, string changeDescription, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .Include(f => f.Project)
+            .Include(f => f.UploadedBy)
+            .Include(f => f.Versions)
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        // Only file uploader or project admin can upload new versions
+        var canUpdate = file.UploadedById == userId || await IsProjectAdminAsync(file.ProjectId, userId);
+        if (!canUpdate)
+        {
+            throw new UnauthorizedAccessException("Insufficient permissions to upload new version");
+        }
+
+        var versionId = Guid.NewGuid();
+        var versionNumber = (file.Versions?.Max(v => v.VersionNumber) ?? 0) + 1;
+        var blobName = $"{file.ProjectId}/{fileId}/versions/{versionId}/{file.OriginalFileName}";
+        
+        // Upload new version to blob storage
+        var containerClient = _blobServiceClient.GetBlobContainerClient(FilesContainer);
+        var blobClient = containerClient.GetBlobClient(blobName);
+        await blobClient.UploadAsync(fileStream, overwrite: true);
+
+        // Create file version entity
+        var fileVersion = new FileVersion
+        {
+            Id = versionId,
+            FileId = fileId,
+            UploadedById = userId,
+            VersionNumber = versionNumber,
+            ChangeDescription = changeDescription,
+            FileSize = fileStream.Length,
+            BlobUrl = blobClient.Uri.ToString(),
+            StoragePath = blobName,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.FileVersions.Add(fileVersion);
+
+        // Update main file metadata
+        file.FileSize = fileStream.Length;
+        file.BlobUrl = blobClient.Uri.ToString();
+        file.StoragePath = blobName;
+        file.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return MapToProjectFileDto(file);
     }
 
-    public Task<IEnumerable<FileVersionDto>> GetFileVersionsAsync(Guid fileId, Guid userId)
+    public async Task<IEnumerable<FileVersionDto>> GetFileVersionsAsync(Guid fileId, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        var versions = await _context.FileVersions
+            .Include(v => v.UploadedBy)
+            .Where(v => v.FileId == fileId)
+            .OrderByDescending(v => v.VersionNumber)
+            .ToListAsync();
+
+        return versions.Select(v => new FileVersionDto
+        {
+            Id = v.Id,
+            FileId = v.FileId,
+            VersionNumber = v.VersionNumber,
+            ChangeDescription = v.ChangeDescription,
+            FileSize = v.FileSize,
+            UploadedById = v.UploadedById,
+            UploadedByName = v.UploadedBy?.FullName ?? "Unknown",
+            CreatedAt = v.CreatedAt
+        });
     }
 
-    public Task<Stream> DownloadFileVersionAsync(Guid fileId, Guid versionId, Guid userId)
+    public async Task<Stream> DownloadFileVersionAsync(Guid fileId, Guid versionId, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        var version = await _context.FileVersions
+            .FirstOrDefaultAsync(v => v.Id == versionId && v.FileId == fileId);
+
+        if (version == null)
+        {
+            throw new FileNotFoundException("File version not found");
+        }
+
+        var containerClient = _blobServiceClient.GetBlobContainerClient(FilesContainer);
+        var blobClient = containerClient.GetBlobClient(version.StoragePath);
+
+        var response = await blobClient.DownloadStreamingAsync();
+        return response.Value.Content;
     }
 
-    public Task<FileShareDto> CreateFileShareAsync(Guid fileId, CreateFileShareRequest request, Guid userId)
+    public async Task<FileShareDto> CreateFileShareAsync(Guid fileId, CreateFileShareRequest request, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        // Only file uploader or project admin can create shares
+        var canShare = file.UploadedById == userId || await IsProjectAdminAsync(file.ProjectId, userId);
+        if (!canShare)
+        {
+            throw new UnauthorizedAccessException("Insufficient permissions to share this file");
+        }
+
+        var shareToken = Guid.NewGuid().ToString("N")[..16]; // 16 character token
+        var share = new FileShare
+        {
+            Id = Guid.NewGuid(),
+            FileId = fileId,
+            SharedById = userId,
+            ShareToken = shareToken,
+            SharedWithEmail = request.SharedWithEmail,
+            SharedWithUserId = request.SharedWithUserId,
+            ShareType = request.ShareType,
+            CanDownload = request.CanDownload,
+            CanView = request.CanView,
+            ExpiresAt = request.ExpiresAt,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.FileShares.Add(share);
+        await _context.SaveChangesAsync();
+
+        // Load with related data
+        var savedShare = await _context.FileShares
+            .Include(s => s.SharedBy)
+            .Include(s => s.SharedWithUser)
+            .Include(s => s.File)
+            .FirstAsync(s => s.Id == share.Id);
+
+        return new FileShareDto
+        {
+            Id = savedShare.Id,
+            FileId = savedShare.FileId,
+            FileName = savedShare.File.FileName,
+            SharedById = savedShare.SharedById,
+            SharedByName = savedShare.SharedBy?.FullName ?? "Unknown",
+            SharedWithUserId = savedShare.SharedWithUserId,
+            SharedWithUserName = savedShare.SharedWithUser?.FullName,
+            SharedWithEmail = savedShare.SharedWithEmail,
+            ShareToken = savedShare.ShareToken,
+            ShareType = savedShare.ShareType,
+            CanDownload = savedShare.CanDownload,
+            CanView = savedShare.CanView,
+            ExpiresAt = savedShare.ExpiresAt,
+            IsActive = savedShare.IsActive,
+            DownloadCount = savedShare.DownloadCount,
+            LastAccessedAt = savedShare.LastAccessedAt,
+            CreatedAt = savedShare.CreatedAt
+        };
     }
 
-    public Task<bool> RevokeFileShareAsync(Guid shareId, Guid userId)
+    public async Task<bool> RevokeFileShareAsync(Guid shareId, Guid userId)
     {
-        throw new NotImplementedException();
+        var share = await _context.FileShares
+            .Include(s => s.File)
+            .FirstOrDefaultAsync(s => s.Id == shareId);
+
+        if (share == null)
+        {
+            return false;
+        }
+
+        // Verify access to the file's project
+        await VerifyProjectAccessAsync(share.File.ProjectId, userId);
+
+        // Only share creator, file owner, or project admin can revoke
+        var canRevoke = share.SharedById == userId || 
+                       share.File.UploadedById == userId || 
+                       await IsProjectAdminAsync(share.File.ProjectId, userId);
+
+        if (!canRevoke)
+        {
+            throw new UnauthorizedAccessException("Insufficient permissions to revoke this share");
+        }
+
+        share.IsActive = false;
+        share.RevokedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 
-    public Task<IEnumerable<FileShareDto>> GetFileSharesAsync(Guid fileId, Guid userId)
+    public async Task<IEnumerable<FileShareDto>> GetFileSharesAsync(Guid fileId, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        var shares = await _context.FileShares
+            .Include(s => s.SharedBy)
+            .Include(s => s.SharedWithUser)
+            .Include(s => s.File)
+            .Where(s => s.FileId == fileId)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync();
+
+        return shares.Select(s => new FileShareDto
+        {
+            Id = s.Id,
+            FileId = s.FileId,
+            FileName = s.File.FileName,
+            SharedById = s.SharedById,
+            SharedByName = s.SharedBy?.FullName ?? "Unknown",
+            SharedWithUserId = s.SharedWithUserId,
+            SharedWithUserName = s.SharedWithUser?.FullName,
+            SharedWithEmail = s.SharedWithEmail,
+            ShareToken = s.ShareToken,
+            ShareType = s.ShareType,
+            CanDownload = s.CanDownload,
+            CanView = s.CanView,
+            ExpiresAt = s.ExpiresAt,
+            IsActive = s.IsActive,
+            DownloadCount = s.DownloadCount,
+            LastAccessedAt = s.LastAccessedAt,
+            CreatedAt = s.CreatedAt
+        });
     }
 
-    public Task<ProjectFileDto?> GetSharedFileAsync(string shareToken)
+    public async Task<ProjectFileDto?> GetSharedFileAsync(string shareToken)
     {
-        throw new NotImplementedException();
+        var share = await _context.FileShares
+            .Include(s => s.File)
+            .ThenInclude(f => f.Project)
+            .Include(s => s.File)
+            .ThenInclude(f => f.UploadedBy)
+            .FirstOrDefaultAsync(s => s.ShareToken == shareToken && 
+                                    s.IsActive && 
+                                    !s.File.IsDeleted &&
+                                    (s.ExpiresAt == null || s.ExpiresAt > DateTime.UtcNow));
+
+        if (share == null)
+        {
+            return null;
+        }
+
+        return MapToProjectFileDto(share.File);
     }
 
-    public Task<FileCommentDto> CreateFileCommentAsync(Guid fileId, CreateFileCommentRequest request, Guid userId)
+    public async Task<FileCommentDto> CreateFileCommentAsync(Guid fileId, CreateFileCommentRequest request, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        var comment = new FileComment
+        {
+            Id = Guid.NewGuid(),
+            FileId = fileId,
+            AuthorId = userId,
+            Content = request.Content,
+            ParentCommentId = request.ParentCommentId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.FileComments.Add(comment);
+        await _context.SaveChangesAsync();
+
+        // Load with related data
+        var savedComment = await _context.FileComments
+            .Include(c => c.Author)
+            .Include(c => c.ParentComment)
+            .ThenInclude(pc => pc!.Author)
+            .FirstAsync(c => c.Id == comment.Id);
+
+        return new FileCommentDto
+        {
+            Id = savedComment.Id,
+            FileId = savedComment.FileId,
+            AuthorId = savedComment.AuthorId,
+            AuthorName = savedComment.Author?.FullName ?? "Unknown",
+            Content = savedComment.Content,
+            ParentCommentId = savedComment.ParentCommentId,
+            ParentComment = savedComment.ParentComment != null ? new FileCommentDto
+            {
+                Id = savedComment.ParentComment.Id,
+                AuthorId = savedComment.ParentComment.AuthorId,
+                AuthorName = savedComment.ParentComment.Author?.FullName ?? "Unknown",
+                Content = savedComment.ParentComment.Content,
+                CreatedAt = savedComment.ParentComment.CreatedAt
+            } : null,
+            IsEdited = savedComment.IsEdited,
+            IsDeleted = savedComment.IsDeleted,
+            CreatedAt = savedComment.CreatedAt,
+            UpdatedAt = savedComment.UpdatedAt
+        };
     }
 
-    public Task<FileCommentDto> UpdateFileCommentAsync(Guid commentId, UpdateFileCommentRequest request, Guid userId)
+    public async Task<FileCommentDto> UpdateFileCommentAsync(Guid commentId, UpdateFileCommentRequest request, Guid userId)
     {
-        throw new NotImplementedException();
+        var comment = await _context.FileComments
+            .Include(c => c.Author)
+            .Include(c => c.File)
+            .FirstOrDefaultAsync(c => c.Id == commentId && !c.IsDeleted);
+
+        if (comment == null)
+        {
+            throw new InvalidOperationException("Comment not found");
+        }
+
+        // Verify access to file's project
+        await VerifyProjectAccessAsync(comment.File.ProjectId, userId);
+
+        // Only comment author can update
+        if (comment.AuthorId != userId)
+        {
+            throw new UnauthorizedAccessException("Only comment author can update the comment");
+        }
+
+        comment.Content = request.Content;
+        comment.IsEdited = true;
+        comment.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return new FileCommentDto
+        {
+            Id = comment.Id,
+            FileId = comment.FileId,
+            AuthorId = comment.AuthorId,
+            AuthorName = comment.Author?.FullName ?? "Unknown",
+            Content = comment.Content,
+            ParentCommentId = comment.ParentCommentId,
+            IsEdited = comment.IsEdited,
+            IsDeleted = comment.IsDeleted,
+            CreatedAt = comment.CreatedAt,
+            UpdatedAt = comment.UpdatedAt
+        };
     }
 
-    public Task<bool> DeleteFileCommentAsync(Guid commentId, Guid userId)
+    public async Task<bool> DeleteFileCommentAsync(Guid commentId, Guid userId)
     {
-        throw new NotImplementedException();
+        var comment = await _context.FileComments
+            .Include(c => c.File)
+            .FirstOrDefaultAsync(c => c.Id == commentId && !c.IsDeleted);
+
+        if (comment == null)
+        {
+            return false;
+        }
+
+        // Verify access to file's project
+        await VerifyProjectAccessAsync(comment.File.ProjectId, userId);
+
+        // Only comment author or project admin can delete
+        var canDelete = comment.AuthorId == userId || await IsProjectAdminAsync(comment.File.ProjectId, userId);
+        if (!canDelete)
+        {
+            throw new UnauthorizedAccessException("Insufficient permissions to delete this comment");
+        }
+
+        comment.IsDeleted = true;
+        comment.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    public Task<IEnumerable<FileCommentDto>> GetFileCommentsAsync(Guid fileId, Guid userId)
+    public async Task<IEnumerable<FileCommentDto>> GetFileCommentsAsync(Guid fileId, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            throw new FileNotFoundException("File not found");
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        var comments = await _context.FileComments
+            .Include(c => c.Author)
+            .Include(c => c.ParentComment)
+            .ThenInclude(pc => pc!.Author)
+            .Where(c => c.FileId == fileId && !c.IsDeleted)
+            .OrderBy(c => c.CreatedAt)
+            .ToListAsync();
+
+        return comments.Select(c => new FileCommentDto
+        {
+            Id = c.Id,
+            FileId = c.FileId,
+            AuthorId = c.AuthorId,
+            AuthorName = c.Author?.FullName ?? "Unknown",
+            Content = c.Content,
+            ParentCommentId = c.ParentCommentId,
+            ParentComment = c.ParentComment != null ? new FileCommentDto
+            {
+                Id = c.ParentComment.Id,
+                AuthorId = c.ParentComment.AuthorId,
+                AuthorName = c.ParentComment.Author?.FullName ?? "Unknown",
+                Content = c.ParentComment.Content,
+                CreatedAt = c.ParentComment.CreatedAt
+            } : null,
+            IsEdited = c.IsEdited,
+            IsDeleted = c.IsDeleted,
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt
+        });
     }
 
-    public Task<Stream?> GetFileThumbnailAsync(Guid fileId, Guid userId)
+    public async Task<Stream?> GetFileThumbnailAsync(Guid fileId, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            return null;
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        if (string.IsNullOrEmpty(file.ThumbnailUrl))
+        {
+            return null;
+        }
+
+        try
+        {
+            var thumbnailContainer = _blobServiceClient.GetBlobContainerClient(ThumbnailsContainer);
+            var thumbnailName = $"{file.ProjectId}/{file.Id}/thumbnail.jpg";
+            var thumbnailClient = thumbnailContainer.GetBlobClient(thumbnailName);
+
+            var response = await thumbnailClient.DownloadStreamingAsync();
+            return response.Value.Content;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve thumbnail for file {FileId}", fileId);
+            return null;
+        }
     }
 
-    public Task<bool> MoveFileAsync(Guid fileId, string newFolderPath, Guid userId)
+    public async Task<bool> MoveFileAsync(Guid fileId, string newFolderPath, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            return false;
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        // Only file uploader or project admin can move
+        var canMove = file.UploadedById == userId || await IsProjectAdminAsync(file.ProjectId, userId);
+        if (!canMove)
+        {
+            throw new UnauthorizedAccessException("Insufficient permissions to move this file");
+        }
+
+        file.FolderPath = newFolderPath;
+        file.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    public Task<bool> ArchiveFileAsync(Guid fileId, Guid userId)
+    public async Task<bool> ArchiveFileAsync(Guid fileId, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            return false;
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        // Only file uploader or project admin can archive
+        var canArchive = file.UploadedById == userId || await IsProjectAdminAsync(file.ProjectId, userId);
+        if (!canArchive)
+        {
+            throw new UnauthorizedAccessException("Insufficient permissions to archive this file");
+        }
+
+        file.IsArchived = true;
+        file.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    public Task<bool> RestoreFileAsync(Guid fileId, Guid userId)
+    public async Task<bool> RestoreFileAsync(Guid fileId, Guid userId)
     {
-        throw new NotImplementedException();
+        var file = await _context.ProjectFiles
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
+
+        if (file == null)
+        {
+            return false;
+        }
+
+        // Verify access
+        await VerifyProjectAccessAsync(file.ProjectId, userId);
+
+        // Only file uploader or project admin can restore
+        var canRestore = file.UploadedById == userId || await IsProjectAdminAsync(file.ProjectId, userId);
+        if (!canRestore)
+        {
+            throw new UnauthorizedAccessException("Insufficient permissions to restore this file");
+        }
+
+        file.IsArchived = false;
+        file.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    public Task<FileStorageStatsDto> GetProjectStorageStatsAsync(Guid projectId, Guid userId)
+    public async Task<FileStorageStatsDto> GetProjectStorageStatsAsync(Guid projectId, Guid userId)
     {
-        throw new NotImplementedException();
+        // Verify access
+        await VerifyProjectAccessAsync(projectId, userId);
+
+        var files = await _context.ProjectFiles
+            .Where(f => f.ProjectId == projectId && !f.IsDeleted)
+            .ToListAsync();
+
+        var totalFiles = files.Count;
+        var totalSize = files.Sum(f => f.FileSize);
+        var archivedFiles = files.Count(f => f.IsArchived);
+        var archivedSize = files.Where(f => f.IsArchived).Sum(f => f.FileSize);
+
+        var categoryBreakdown = files
+            .GroupBy(f => f.FileCategory)
+            .ToDictionary(g => g.Key, g => new FileCategoryStatsDto
+            {
+                Category = g.Key,
+                FileCount = g.Count(),
+                TotalSize = g.Sum(f => f.FileSize),
+                AverageSize = g.Average(f => f.FileSize)
+            });
+
+        return new FileStorageStatsDto
+        {
+            TotalFiles = totalFiles,
+            TotalSize = totalSize,
+            ArchivedFiles = archivedFiles,
+            ArchivedSize = archivedSize,
+            ActiveFiles = totalFiles - archivedFiles,
+            ActiveSize = totalSize - archivedSize,
+            CategoryBreakdown = categoryBreakdown.Values.ToList(),
+            LastUpdated = DateTime.UtcNow
+        };
     }
 
-    public Task<FileStorageStatsDto> GetUserStorageStatsAsync(Guid userId)
+    public async Task<FileStorageStatsDto> GetUserStorageStatsAsync(Guid userId)
     {
-        throw new NotImplementedException();
+        // Get all projects the user has access to
+        var userProjectIds = await _context.ProjectMembers
+            .Where(pm => pm.UserId == userId && pm.IsActive)
+            .Select(pm => pm.ProjectId)
+            .ToListAsync();
+
+        var files = await _context.ProjectFiles
+            .Where(f => userProjectIds.Contains(f.ProjectId) && !f.IsDeleted)
+            .ToListAsync();
+
+        var userUploadedFiles = files.Where(f => f.UploadedById == userId).ToList();
+
+        var totalFiles = files.Count;
+        var totalSize = files.Sum(f => f.FileSize);
+        var userFiles = userUploadedFiles.Count;
+        var userSize = userUploadedFiles.Sum(f => f.FileSize);
+
+        var categoryBreakdown = userUploadedFiles
+            .GroupBy(f => f.FileCategory)
+            .ToDictionary(g => g.Key, g => new FileCategoryStatsDto
+            {
+                Category = g.Key,
+                FileCount = g.Count(),
+                TotalSize = g.Sum(f => f.FileSize),
+                AverageSize = g.Average(f => f.FileSize)
+            });
+
+        return new FileStorageStatsDto
+        {
+            TotalFiles = userFiles,
+            TotalSize = userSize,
+            ArchivedFiles = userUploadedFiles.Count(f => f.IsArchived),
+            ArchivedSize = userUploadedFiles.Where(f => f.IsArchived).Sum(f => f.FileSize),
+            ActiveFiles = userUploadedFiles.Count(f => !f.IsArchived),
+            ActiveSize = userUploadedFiles.Where(f => !f.IsArchived).Sum(f => f.FileSize),
+            CategoryBreakdown = categoryBreakdown.Values.ToList(),
+            LastUpdated = DateTime.UtcNow
+        };
     }
 
     public async Task<bool> ValidateFileAsync(string fileName, string contentType, long fileSize)

@@ -216,6 +216,98 @@
                     </Frame>
                 </Grid>
 
+                <!-- Upcoming Deadlines Section -->
+                <StackLayout Spacing="15" Margin="0,20,0,0" IsVisible="{Binding UpcomingDeadlines.Count, Converter={StaticResource IsNotNullConverter}}">
+                    <Label Text="Upcoming Deadlines"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                    
+                    <CollectionView ItemsSource="{Binding UpcomingDeadlines}"
+                                    BackgroundColor="Transparent"
+                                    HeightRequest="200">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="15" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15"
+                                      BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                      Margin="0,5">
+                                    
+                                    <!-- Priority Indicator -->
+                                    <BoxView Grid.Column="0" 
+                                             WidthRequest="4" 
+                                             HeightRequest="40"
+                                             BackgroundColor="Orange"
+                                             CornerRadius="2" />
+                                    
+                                    <!-- Task Details -->
+                                    <StackLayout Grid.Column="1" VerticalOptions="Center" Spacing="3">
+                                        <Label Text="{Binding TaskTitle}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                                        
+                                        <Label Text="{Binding ProjectName}"
+                                               FontSize="12"
+                                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                        
+                                        <Label Text="{Binding AssigneeName}"
+                                               FontSize="11"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                                    </StackLayout>
+                                    
+                                    <!-- Days Remaining -->
+                                    <StackLayout Grid.Column="2" VerticalOptions="Center" HorizontalOptions="End">
+                                        <Label Text="{Binding DaysRemaining}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                               HorizontalOptions="Center" />
+                                        
+                                        <Label Text="days left"
+                                               FontSize="10"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                               HorizontalOptions="Center" />
+                                    </StackLayout>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+
+                <!-- Sync Status Bar -->
+                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                       CornerRadius="8"
+                       Padding="15"
+                       Margin="0,10,0,0"
+                       HasShadow="False">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Label Grid.Column="0"
+                               Text="{Binding IsOfflineMode, Converter={StaticResource BoolToSyncIconConverter}}"
+                               FontSize="16"
+                               VerticalOptions="Center" />
+                        
+                        <StackLayout Grid.Column="1" VerticalOptions="Center">
+                            <Label Text="{Binding IsOfflineMode, Converter={StaticResource BoolToSyncStatusConverter}}"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+                            
+                            <Label Text="{Binding LastSyncTime, StringFormat='Last sync: {0}'}"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                        </StackLayout>
+                        
+                        <Button Grid.Column="2"
+                                Text="Sync"
+                                FontSize="12"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                TextColor="White"
+                                CornerRadius="15"
+                                Padding="15,5"
+                                Command="{Binding RefreshCommand}" />
+                    </Grid>
+                </Frame>
+
                 <!-- Recent Activity Timeline -->
                 <StackLayout Spacing="15" Margin="0,20,0,0">
                     <Grid ColumnDefinitions="*,Auto">
